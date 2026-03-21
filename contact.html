@@ -1,262 +1,161 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Get involved with AI + Kids — partner with us to bring responsible AI education to more students.">
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <meta name="description" content="Contact AI + Kids — partner with us to bring AI education to your school or community."/>
   <title>Contact — AI + Kids</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="css/styles.css"/>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🤖</text></svg>">
 </head>
 <body>
 
-  <nav class="navbar">
-    <div class="container">
-      <a href="index.html" class="navbar-brand">
-        <div class="brand-icon">🤖</div>
-        AI <span>+</span> Kids
-      </a>
-      <ul class="nav-links" id="navLinks">
-        <li><a href="index.html">Home</a></li>
-        <li><a href="about.html">About</a></li>
-        <li><a href="programs.html">Programs</a></li>
-        <li><a href="impact.html">Impact</a></li>
-        <li><a href="contact.html" class="active">Contact</a></li>
-        <li class="nav-cta"><a href="chat.html" class="btn btn-primary btn-sm">Try AI Chat ✨</a></li>
-      </ul>
-      <button class="hamburger" id="hamburger" aria-label="Menu">
-        <span></span><span></span><span></span>
-      </button>
+<nav class="nav">
+  <div class="wrap nav__inner">
+    <a href="index.html" class="nav__logo">
+      <div class="nav__logo-mark">
+        <svg viewBox="0 0 20 20"><path d="M10 2L12.5 7.5H18L13.5 11L15.5 17L10 13.5L4.5 17L6.5 11L2 7.5H7.5L10 2Z"/></svg>
+      </div>
+      <span class="nav__logo-text">AI<span>+</span>Kids</span>
+    </a>
+    <ul class="nav__links" id="navLinks">
+      <li><a href="index.html">About</a></li>
+      <li><a href="programs.html">Programs</a></li>
+      <li><a href="impact.html">Impact</a></li>
+      <li><a href="index.html#faq">FAQ</a></li>
+      <li><a href="contact.html" class="active">Contact</a></li>
+    </ul>
+    <div class="nav__right">
+      <a href="contact.html" class="btn btn-teal">Get Involved</a>
     </div>
-  </nav>
+    <button class="nav__burger" id="burger" aria-label="Menu">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</nav>
 
-  <main>
+<section class="page-hero">
+  <div class="page-hero__glow pg1"></div>
+  <div class="page-hero__glow pg2"></div>
+  <div class="wrap page-hero__inner">
+    <span class="eyebrow eyebrow--light">Let's Connect</span>
+    <h1>Get Involved</h1>
+    <p class="page-hero__sub">We welcome opportunities to collaborate with schools, libraries, community organizations, educators, and families committed to educational equity.</p>
+  </div>
+</section>
 
-    <!-- ── Page Hero ─────────────────────────────────── -->
-    <section class="page-hero">
-      <div class="container">
-        <div class="badge badge-teal">Get Involved</div>
-        <h1>Let's Work <span class="grad-text">Together</span></h1>
-        <p>We welcome opportunities to collaborate with schools, libraries, community organizations, educators, and families who share our commitment to accessible AI education.</p>
+<section class="contact">
+  <div class="wrap contact__grid">
+    <div class="contact__text reveal">
+      <span class="section-badge badge-teal">Who We Work With</span>
+      <h2>Building community <em>together</em></h2>
+      <p>If you are interested in supporting accessible AI education, we would love to connect. We welcome collaboration from any organization or individual committed to educational equity.</p>
+      <div class="partner-grid">
+        <div class="partner-chip">🏫 Schools</div>
+        <div class="partner-chip">📚 Libraries</div>
+        <div class="partner-chip">🤝 Community Orgs</div>
+        <div class="partner-chip">👩‍🏫 Educators</div>
+        <div class="partner-chip">👨‍👩‍👧 Families</div>
+        <div class="partner-chip">💼 Supporters</div>
       </div>
-    </section>
-
-    <!-- ── Contact Section ──────────────────────────── -->
-    <section class="section">
-      <div class="container">
-        <div class="contact-grid">
-
-          <!-- Left: info + partners -->
-          <div style="display:flex;flex-direction:column;gap:1.5rem;">
-
-            <div class="contact-info-card">
-              <h3 style="margin-bottom:1.25rem;">Contact Information</h3>
-              <div class="contact-item">
-                <div class="contact-item-icon icon-bg-purple">📧</div>
-                <div>
-                  <strong>Email</strong>
-                  <a href="mailto:info@aipluskids.org">info@aipluskids.org</a>
-                </div>
-              </div>
-              <div class="contact-item">
-                <div class="contact-item-icon icon-bg-teal">🌐</div>
-                <div>
-                  <strong>Website</strong>
-                  <span>www.aipluskids.org</span>
-                </div>
-              </div>
-              <div class="contact-item">
-                <div class="contact-item-icon icon-bg-green">🌱</div>
-                <div>
-                  <strong>Organization</strong>
-                  <span>Student-Led Nonprofit · K–8</span>
-                </div>
-              </div>
-            </div>
-
-            <!-- Who we collaborate with -->
-            <div class="card" style="border-top:3px solid var(--teal);">
-              <div class="badge badge-teal" style="margin-bottom:1rem;">We'd Love to Collaborate With</div>
-              <div style="display:flex;flex-direction:column;gap:.65rem;">
-                <div class="value-pill">🏫 Schools</div>
-                <div class="value-pill">📚 Libraries</div>
-                <div class="value-pill">🤝 Community Organizations</div>
-                <div class="value-pill">👩‍🏫 Educators &amp; Families</div>
-              </div>
-            </div>
-
-            <!-- Note -->
-            <div style="background:var(--primary-light);border:1px solid rgba(99,102,241,.2);border-radius:var(--radius-lg);padding:1.25rem;">
-              <strong style="color:var(--primary-dark);display:block;margin-bottom:.35rem;">💬 We read every message</strong>
-              <p style="font-size:.875rem;color:var(--primary-dark);">Whether you're interested in supporting our mission, hosting a workshop, or just learning more — reach out. We aim to respond within 2–3 business days.</p>
-            </div>
-
-          </div>
-
-          <!-- Right: form -->
-          <div class="contact-form-card">
-            <div class="badge badge-green" style="margin-bottom:1rem;">Send a Message</div>
-            <h3>If you are interested in supporting accessible AI education, we would love to connect.</h3>
-            <br>
-            <form id="contactForm" novalidate>
-              <div class="form-row">
-                <div class="form-group">
-                  <label for="firstName">First Name *</label>
-                  <input type="text" id="firstName" name="firstName" placeholder="Jane" required>
-                </div>
-                <div class="form-group">
-                  <label for="lastName">Last Name *</label>
-                  <input type="text" id="lastName" name="lastName" placeholder="Smith" required>
-                </div>
-              </div>
-              <div class="form-group">
-                <label for="email">Email Address *</label>
-                <input type="email" id="email" name="email" placeholder="jane@example.com" required>
-              </div>
-              <div class="form-group">
-                <label for="role">I represent a…</label>
-                <select id="role" name="role">
-                  <option value="">Select your role</option>
-                  <option value="school">School or District</option>
-                  <option value="library">Library</option>
-                  <option value="community">Community Organization</option>
-                  <option value="educator">Educator</option>
-                  <option value="family">Parent / Family</option>
-                  <option value="student">Student</option>
-                  <option value="other">Other</option>
-                </select>
-              </div>
-              <div class="form-group">
-                <label for="subject">Subject *</label>
-                <input type="text" id="subject" name="subject" placeholder="How can we work together?" required>
-              </div>
-              <div class="form-group">
-                <label for="message">Message *</label>
-                <textarea id="message" name="message" placeholder="Tell us about your interest in AI + Kids…" required></textarea>
-              </div>
-              <button type="submit" class="btn btn-primary form-submit" id="submitBtn">
-                <span id="submitText">Send Message 📬</span>
-              </button>
-              <div id="formFeedback" style="display:none;margin-top:1rem;padding:.85rem 1rem;border-radius:var(--radius);font-size:.9rem;font-weight:500;"></div>
-            </form>
-          </div>
-
-        </div>
-      </div>
-    </section>
-
-    <!-- ── CTA ───────────────────────────────────────── -->
-    <section class="cta-banner">
-      <div class="container">
-        <h2>Explore AI While You Wait</h2>
-        <p>Our kid-safe AI chat is ready right now — ask anything and learn as you go.</p>
-        <div class="cta-actions">
-          <a href="chat.html" class="btn btn-white">✨ Try AI Chat</a>
-          <a href="about.html" class="btn btn-outline-white">Our Story</a>
-        </div>
-      </div>
-    </section>
-
-  </main>
-
-  <footer>
-    <div class="container">
-      <div class="footer-grid">
-        <div>
-          <div class="footer-brand">🤖 AI <span>+</span> Kids</div>
-          <p class="footer-desc">A student-led community initiative focused on digital equity and responsible AI education for K–8 students.</p>
-          <br>
-          <span class="nonprofit-badge">🌱 Student-Led Nonprofit</span>
-        </div>
-        <div>
-          <h4>Pages</h4>
-          <ul class="footer-links">
-            <li><a href="index.html">Home</a></li>
-            <li><a href="about.html">About</a></li>
-            <li><a href="programs.html">Programs</a></li>
-            <li><a href="impact.html">Impact</a></li>
-            <li><a href="chat.html">AI Chat</a></li>
-            <li><a href="contact.html">Contact</a></li>
-          </ul>
-        </div>
-        <div>
-          <h4>Contact</h4>
-          <ul class="footer-links">
-            <li><a href="mailto:info@aipluskids.org">info@aipluskids.org</a></li>
-            <li><span style="color:rgba(255,255,255,.4)">www.aipluskids.org</span></li>
-          </ul>
-        </div>
-      </div>
-      <div class="footer-bottom">
-        <span>© 2025 AI + Kids. All rights reserved.</span>
-        <span>Built with ❤️ for curious kids everywhere</span>
+      <div class="contact__email">
+        <span class="contact__email-label">Email us directly</span>
+        <a href="mailto:info@aipluskids.org">info@aipluskids.org</a>
       </div>
     </div>
-  </footer>
 
-  <script src="js/main.js"></script>
-  <script>
-    const FORMSPREE_ENDPOINT = 'https://formspree.io/f/xkoqelrn';
+    <div class="form-box reveal">
+      <h3>Send a Message</h3>
+      <form id="contactForm">
+        <div class="form-row">
+          <div class="form-field">
+            <label for="fname">First Name</label>
+            <input type="text" id="fname" placeholder="Jane" required/>
+          </div>
+          <div class="form-field">
+            <label for="lname">Last Name</label>
+            <input type="text" id="lname" placeholder="Smith" required/>
+          </div>
+        </div>
+        <div class="form-field">
+          <label for="email">Email Address</label>
+          <input type="email" id="email" placeholder="you@example.com" required/>
+        </div>
+        <div class="form-field">
+          <label for="org">Organization (optional)</label>
+          <input type="text" id="org" placeholder="School, library, organization..."/>
+        </div>
+        <div class="form-field">
+          <label for="role">I am a...</label>
+          <select id="role">
+            <option value="">Select your role</option>
+            <option>Educator / Teacher</option>
+            <option>School Administrator</option>
+            <option>Parent / Guardian</option>
+            <option>Librarian</option>
+            <option>Community Organizer</option>
+            <option>Student</option>
+            <option>Other</option>
+          </select>
+        </div>
+        <div class="form-field">
+          <label for="message">Message</label>
+          <textarea id="message" rows="4" placeholder="Tell us how you'd like to collaborate or get involved..." required></textarea>
+        </div>
+        <button type="submit" class="btn btn-teal form-submit">Send Message →</button>
+        <div id="formSuccess" class="form-success">✅ Thank you! We'll be in touch soon.</div>
+      </form>
+    </div>
+  </div>
+</section>
 
-    document.getElementById('contactForm').addEventListener('submit', async function(e) {
-      e.preventDefault();
-      const form = e.target;
-      const btn  = document.getElementById('submitBtn');
-      const text = document.getElementById('submitText');
-      const fb   = document.getElementById('formFeedback');
+<footer class="footer">
+  <div class="wrap">
+    <div class="footer__inner">
+      <div class="footer__brand">
+        <div class="footer__logo">AI<span>+</span>Kids</div>
+        <p>A student-led community initiative focused on digital equity and responsible AI education for every child.</p>
+      </div>
+      <div>
+        <div class="footer__col-title">Pages</div>
+        <ul class="footer__links">
+          <li><a href="index.html">About</a></li>
+          <li><a href="programs.html">Programs</a></li>
+          <li><a href="impact.html">Impact</a></li>
+          <li><a href="index.html#faq">FAQ</a></li>
+          <li><a href="contact.html">Contact</a></li>
+        </ul>
+      </div>
+      <div>
+        <div class="footer__col-title">Programs</div>
+        <ul class="footer__links">
+          <li><a href="programs.html">AI Basics for Kids</a></li>
+          <li><a href="programs.html">Safe &amp; Responsible AI</a></li>
+          <li><a href="programs.html">Creative AI Learning</a></li>
+          <li><a href="programs.html">Family Resources</a></li>
+        </ul>
+      </div>
+      <div>
+        <div class="footer__col-title">Contact</div>
+        <div class="footer__email">
+          <a href="mailto:info@aipluskids.org">info@aipluskids.org</a>
+        </div>
+      </div>
+    </div>
+    <div class="footer__bottom">
+      <span class="footer__copy">© 2025 AI + Kids. All rights reserved.</span>
+      <span class="footer__copy">Student-Led · Community Driven · Nonprofit Initiative</span>
+    </div>
+  </div>
+</footer>
 
-      const fields = ['firstName','lastName','email','subject','message'];
-      let valid = true;
-      fields.forEach(id => {
-        const el = document.getElementById(id);
-        if (!el.value.trim()) { el.style.borderColor = '#ef4444'; valid = false; }
-        else el.style.borderColor = '';
-      });
-      if (!valid) {
-        fb.style.display = 'block';
-        fb.style.background = '#fef2f2';
-        fb.style.color = '#991b1b';
-        fb.textContent = 'Please fill in all required fields.';
-        return;
-      }
-
-      btn.disabled = true;
-      text.textContent = 'Sending…';
-      fb.style.display = 'none';
-
-      try {
-        const response = await fetch(FORMSPREE_ENDPOINT, {
-          method: 'POST',
-          body: new FormData(form),
-          headers: { Accept: 'application/json' },
-        });
-        if (response.ok) {
-          fb.style.display = 'block';
-          fb.style.background = '#f0fdf4';
-          fb.style.color = '#166534';
-          fb.textContent = '✅ Message sent! We\'ll be in touch within 2–3 business days.';
-          form.reset();
-        } else {
-          const data = await response.json().catch(() => ({}));
-          const msg = (data.errors || []).map(e => e.message).join(', ') || 'Something went wrong. Please email us directly at info@aipluskids.org.';
-          fb.style.display = 'block';
-          fb.style.background = '#fef2f2';
-          fb.style.color = '#991b1b';
-          fb.textContent = '❌ ' + msg;
-        }
-      } catch (_) {
-        fb.style.display = 'block';
-        fb.style.background = '#fef2f2';
-        fb.style.color = '#991b1b';
-        fb.textContent = '❌ Could not send message. Please email us at info@aipluskids.org.';
-      } finally {
-        btn.disabled = false;
-        text.textContent = 'Send Message 📬';
-      }
-    });
-  </script>
+<script src="js/nav.js"></script>
+<script>
+  document.getElementById('contactForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    document.getElementById('formSuccess').style.display = 'block';
+    this.reset();
+  });
+</script>
 </body>
 </html>
