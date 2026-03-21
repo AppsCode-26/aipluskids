@@ -4,6 +4,6 @@
   "private": true,
   "description": "AI Plus Kids — nonprofit K–8 AI education website with serverless Gemini chat backend",
   "engines": {
-    "node": "18.x"
+    "node": "24.x"
   }
 }
