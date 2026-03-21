@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Chat with Spark — a kid-safe AI assistant from AI Plus Kids, powered by Google Gemini.">
+  <title>AI Chat — AI Plus Kids</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🤖</text></svg>">
+</head>
+<body>
+
+  <!-- ── Navbar ─────────────────────────────────────── -->
+  <nav class="navbar">
+    <div class="container">
+      <a href="index.html" class="navbar-brand">
+        <div class="brand-icon">🤖</div>
+        AI Plus Kids
+      </a>
+      <ul class="nav-links" id="navLinks">
+        <li><a href="index.html">Home</a></li>
+        <li><a href="about.html">About</a></li>
+        <li><a href="workshops.html">Workshops</a></li>
+        <li><a href="contact.html">Contact</a></li>
+        <li class="nav-cta"><a href="chat.html" class="btn btn-primary active">Try AI Chat ✨</a></li>
+      </ul>
+      <button class="hamburger" id="hamburger" aria-label="Menu">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </nav>
+
+  <main>
+    <div class="chat-layout">
+
+      <!-- ── Sidebar ─────────────────────────────────── -->
+      <aside class="chat-sidebar">
+        <div class="chat-sidebar-header">
+          <h3>✨ Spark AI</h3>
+          <p>Your kid-safe AI learning buddy</p>
+        </div>
+
+        <div class="sidebar-divider"></div>
+
+        <div class="safe-badge">
+          <span>🛡️</span>
+          <span>Kid-safe &amp; monitored — your privacy is protected</span>
+        </div>
+
+        <div class="tip-card">
+          <strong>💡 Tips for great questions</strong>
+          <ul>
+            <li>Be specific about what you want to learn</li>
+            <li>Ask "why" and "how" questions</li>
+            <li>If unsure, ask Spark to explain differently</li>
+            <li>Always verify important facts!</li>
+          </ul>
+        </div>
+
+        <div class="sidebar-divider"></div>
+
+        <div class="tip-card" style="background:#fff7ed;color:#92400e;">
+          <strong style="color:#92400e;">⚠️ Remember</strong>
+          <ul style="color:#92400e;">
+            <li>Never share your full name, address, or school</li>
+            <li>AI can make mistakes — think critically!</li>
+            <li>Use AI to learn, not to skip thinking</li>
+          </ul>
+        </div>
+
+        <div style="margin-top:auto;">
+          <p style="font-size:.75rem;color:var(--text-muted);text-align:center;line-height:1.5;">
+            Powered by Google Gemini<br>
+            <a href="about.html" style="color:var(--primary);font-size:.75rem;">About AI Plus Kids</a>
+          </p>
+        </div>
+      </aside>
+
+      <!-- ── Chat Main ───────────────────────────────── -->
+      <div class="chat-main">
+
+        <!-- Top bar -->
+        <div class="chat-top-bar">
+          <div class="ai-avatar">✨</div>
+          <div class="ai-info">
+            <strong>Spark — AI Plus Kids Assistant</strong>
+            <span><span class="status-dot"></span>Online &amp; ready to help</span>
+          </div>
+        </div>
+
+        <!-- Messages -->
+        <div class="chat-messages" id="chatMessages">
+          <div class="intro-message">
+            <div class="intro-icon">✨</div>
+            <h3>Hi! I'm Spark 👋</h3>
+            <p>I'm a kid-friendly AI here to help you learn, explore, and ask big questions about technology and the world. What's on your mind?</p>
+            <div class="prompt-chips">
+              <button class="chip" onclick="sendChip(this)">What is AI?</button>
+              <button class="chip" onclick="sendChip(this)">How does a chatbot work?</button>
+              <button class="chip" onclick="sendChip(this)">Can AI make mistakes?</button>
+              <button class="chip" onclick="sendChip(this)">How do I use AI for homework safely?</button>
+              <button class="chip" onclick="sendChip(this)">What jobs use AI?</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Input area -->
+        <div class="chat-input-area">
+          <div class="chat-input-row">
+            <textarea
+              id="chatInput"
+              placeholder="Ask Spark anything…"
+              rows="1"
+              maxlength="1000"
+              aria-label="Chat message"
+            ></textarea>
+            <button id="sendBtn" aria-label="Send message">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="22" y1="2" x2="11" y2="13"></line>
+                <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+              </svg>
+            </button>
+          </div>
+          <p class="chat-footer-note">
+            Spark can make mistakes. Always think critically and never share personal information.
+          </p>
+        </div>
+
+      </div>
+    </div>
+  </main>
+
+  <script src="js/main.js"></script>
+  <script src="js/chat.js"></script>
+</body>
+</html>
