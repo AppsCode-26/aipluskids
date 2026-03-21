@@ -13,17 +13,25 @@ if (hamburger && navLinks) {
     hamburger.setAttribute('aria-expanded', isOpen);
   });
 
-  // Close when a link is clicked
   navLinks.querySelectorAll('a').forEach(link => {
     link.addEventListener('click', () => navLinks.classList.remove('open'));
   });
 
-  // Close on outside click
   document.addEventListener('click', (e) => {
     if (!hamburger.contains(e.target) && !navLinks.contains(e.target)) {
       navLinks.classList.remove('open');
     }
   });
+}
+
+// ── Navbar scroll shadow ───────────────────────────
+const navbar = document.querySelector('.navbar');
+if (navbar) {
+  const handleScroll = () => {
+    navbar.classList.toggle('scrolled', window.scrollY > 16);
+  };
+  window.addEventListener('scroll', handleScroll, { passive: true });
+  handleScroll();
 }
 
 // ── Smooth scroll for anchor links ────────────────
@@ -36,3 +44,49 @@ document.querySelectorAll('a[href^="#"]').forEach(anchor => {
     }
   });
 });
+
+// ── Scroll reveal (IntersectionObserver) ──────────
+const revealEls = document.querySelectorAll('.reveal');
+if (revealEls.length) {
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('visible');
+        io.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.12, rootMargin: '0px 0px -40px 0px' });
+
+  revealEls.forEach(el => io.observe(el));
+}
+
+// ── Animated stat counters ─────────────────────────
+function animateCounter(el, target, duration = 1600) {
+  const isFloat = target % 1 !== 0;
+  const start   = performance.now();
+  const step = (now) => {
+    const elapsed  = now - start;
+    const progress = Math.min(elapsed / duration, 1);
+    const eased    = 1 - Math.pow(1 - progress, 3);
+    const value    = eased * target;
+    el.textContent = isFloat ? value.toFixed(1) : Math.round(value).toLocaleString();
+    if (progress < 1) requestAnimationFrame(step);
+  };
+  requestAnimationFrame(step);
+}
+
+const counterEls = document.querySelectorAll('[data-count]');
+if (counterEls.length) {
+  const counterIO = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        const el     = entry.target;
+        const target = parseFloat(el.dataset.count);
+        animateCounter(el, target);
+        counterIO.unobserve(el);
+      }
+    });
+  }, { threshold: 0.5 });
+
+  counterEls.forEach(el => counterIO.observe(el));
+}
