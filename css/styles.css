@@ -321,3 +321,39 @@ strong{color:var(--ink);font-weight:700}
 /* ── SCROLL REVEAL ── */
 .reveal{opacity:0;transform:translateY(22px);transition:opacity .65s var(--ease),transform .65s var(--ease)}
 .reveal.in{opacity:1;transform:none}
+
+/* ── SPARK CHAT WIDGET ── */
+.spark-link{color:#7ff0b4;font-weight:600;font-size:.88rem;cursor:pointer;transition:opacity .15s}
+.spark-link:hover{opacity:.7}
+
+.spark-panel{position:fixed;bottom:24px;right:24px;z-index:10000;width:380px;max-height:520px;border-radius:16px;background:#fff;box-shadow:0 12px 48px rgba(0,0,0,.18);display:flex;flex-direction:column;opacity:0;transform:translateY(16px) scale(.95);pointer-events:none;transition:opacity .25s,transform .25s}
+.spark-panel.open{opacity:1;transform:translateY(0) scale(1);pointer-events:auto}
+
+.spark-header{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;background:var(--teal);color:#fff;border-radius:16px 16px 0 0;font-family:var(--sans);font-weight:700;font-size:.95rem}
+.spark-header-left{display:flex;align-items:center;gap:8px}
+.spark-close{background:none;border:none;color:rgba(255,255,255,.8);font-size:1.4rem;cursor:pointer;padding:0 4px;line-height:1;transition:color .15s}
+.spark-close:hover{color:#fff}
+
+.spark-messages{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:10px;min-height:260px;max-height:360px}
+
+.spark-bubble{max-width:82%;padding:10px 14px;border-radius:14px;font-family:var(--sans);font-size:.85rem;line-height:1.5;word-wrap:break-word}
+.spark-model{align-self:flex-start;background:#f0f7f7;color:var(--dark);border-bottom-left-radius:4px}
+.spark-user{align-self:flex-end;background:var(--teal);color:#fff;border-bottom-right-radius:4px}
+
+.spark-form{display:flex;gap:8px;padding:12px 14px;border-top:1px solid #eee}
+.spark-input{flex:1;padding:10px 14px;border:1.5px solid #dde;border-radius:10px;font-family:var(--sans);font-size:.85rem;outline:none;transition:border-color .15s}
+.spark-input:focus{border-color:var(--teal)}
+.spark-send{background:var(--teal);color:#fff;border:none;border-radius:10px;width:38px;height:38px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:opacity .15s}
+.spark-send:hover{opacity:.85}
+.spark-send:disabled{opacity:.4;cursor:not-allowed}
+
+/* typing dots */
+.spark-dot{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--teal);margin:0 2px;animation:sparkBounce .6s infinite alternate}
+.spark-dot:nth-child(2){animation-delay:.15s}
+.spark-dot:nth-child(3){animation-delay:.3s}
+@keyframes sparkBounce{0%{opacity:.3;transform:translateY(0)}100%{opacity:1;transform:translateY(-4px)}}
+
+@media(max-width:480px){
+  .spark-panel{width:calc(100vw - 24px);right:12px;bottom:12px;max-height:70vh}
+  .spark-toggle{bottom:16px;right:16px;width:50px;height:50px}
+}
