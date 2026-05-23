@@ -3,42 +3,12 @@
    Full-page chat engine powered by Google Gemini
    ════════════════════════════════════════════════════════════ */
 
+/* The Gemini API key lives ONLY on the Cloudflare Worker (server-side),
+   never in this file. Paste your deployed Worker URL below.
+   See worker/spark-worker.js for deploy instructions. */
 const SPARK = {
-  apiKey: 'AIzaSyBGzs8GS4ObpciID2WvL85PfNHCGeM3kvc',
-  model:  'gemini-2.5-flash',
-  get url() {
-    return `https://generativelanguage.googleapis.com/v1beta/models/${this.model}:streamGenerateContent`;
-  },
+  workerUrl: 'https://spark-proxy.n4dwdnrcvt.workers.dev',
 };
-
-const SYSTEM_INSTRUCTION = `You are Spark, a friendly and enthusiastic AI learning assistant for AI + Kids,
-a nonprofit that teaches K–8 students about artificial intelligence.
-
-Your personality:
-- Warm, encouraging, and age-appropriate for children in grades K–8
-- Patient and clear — use simple language, short sentences, and relatable examples
-- Curious and enthusiastic about learning and technology
-- Honest about what you don't know or what AI can't do
-
-Your rules:
-1. Always prioritize child safety. Never produce content that is violent, sexual, scary, or harmful.
-2. If a child asks something inappropriate, gently redirect: "That's not something I can help with, but let's talk about something cool instead!"
-3. Never ask for or encourage sharing personal information (full name, address, school, phone number, etc.).
-4. Be honest that you are an AI and can make mistakes — encourage kids to verify important facts.
-5. Promote responsible AI use: help kids think and learn, rather than doing their work for them.
-6. When helping with homework, guide with hints and explanations rather than giving direct answers.
-7. Keep responses concise and easy to read — use short paragraphs, and use markdown bullet lists ("- ") or **bold** when it helps.
-8. Celebrate curiosity! Every question is a great question.
-
-Topics you love: AI, technology, science, creative writing, learning tips, how things work.
-Topics to avoid or gently redirect: anything unsafe, political, adult, or outside your role.`;
-
-const SAFETY_SETTINGS = [
-  { category: 'HARM_CATEGORY_HARASSMENT',        threshold: 'BLOCK_LOW_AND_ABOVE' },
-  { category: 'HARM_CATEGORY_HATE_SPEECH',       threshold: 'BLOCK_LOW_AND_ABOVE' },
-  { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: 'BLOCK_LOW_AND_ABOVE' },
-  { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_LOW_AND_ABOVE' },
-];
 
 const WELCOME =
   "Hi there! I'm **Spark**, your AI learning buddy. I can explain how AI works, help with science questions, spark creative ideas, and share learning tips. What would you like to explore today?";
@@ -269,24 +239,13 @@ class SparkChat {
     return "Oops! Something went wrong. Please try again in a moment.";
   }
 
-  /* Stream a response from Gemini, calling onToken(token, fullSoFar) */
+  /* Stream a response via the Cloudflare Worker, calling onToken(token, fullSoFar).
+     The worker holds the API key and adds the system prompt + safety settings. */
   async streamReply(onToken) {
-    const body = {
-      system_instruction: { parts: [{ text: SYSTEM_INSTRUCTION }] },
-      contents: this.history,
-      generationConfig: {
-        temperature: 0.75,
-        maxOutputTokens: 1024,
-        topP: 0.95,
-        thinkingConfig: { thinkingBudget: 0 },  // disable thinking for fast, kid-friendly answers
-      },
-      safetySettings: SAFETY_SETTINGS,
-    };
-
-    const res = await fetch(`${SPARK.url}?alt=sse&key=${SPARK.apiKey}`, {
+    const res = await fetch(SPARK.workerUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body),
+      body: JSON.stringify({ history: this.history }),
     });
 
     if (!res.ok) throw new Error(`API ${res.status}`);
