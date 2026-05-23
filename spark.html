@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <meta name="description" content="Chat with Spark, the kid-safe AI learning assistant from AI + Kids."/>
+  <title>Spark: AI + Kids</title>
+  <link rel="stylesheet" href="css/styles.css"/>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><path fill='%230d7c82' d='M50 5L62 35H95L68 57L78 88L50 68L22 88L32 57L5 35H38L50 5Z'/></svg>">
+</head>
+<body>
+
+<nav class="nav">
+  <div class="wrap nav__inner">
+    <a href="index.html" class="nav__logo">
+      <div class="nav__logo-mark">
+        <svg viewBox="0 0 20 20"><path d="M10 2L12.5 7.5H18L13.5 11L15.5 17L10 13.5L4.5 17L6.5 11L2 7.5H7.5L10 2Z"/></svg>
+      </div>
+      <span class="nav__logo-text">AI<span>+</span>Kids</span>
+    </a>
+    <ul class="nav__links" id="navLinks">
+      <li><a href="index.html">About</a></li>
+      <li><a href="programs.html">Programs</a></li>
+      <li><a href="impact.html">Impact</a></li>
+      <li><a href="spark.html" class="active">Spark</a></li>
+      <li><a href="index.html#faq">FAQ</a></li>
+      <li><a href="contact.html">Contact</a></li>
+    </ul>
+    <div class="nav__right">
+      <a href="contact.html" class="btn btn-teal">Get Involved</a>
+    </div>
+    <button class="nav__burger" id="burger" aria-label="Menu">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</nav>
+
+<!-- ─── SPARK PAGE ─────────────────────────────── -->
+<section class="spark-page">
+  <div class="wrap">
+    <div class="spark-intro">
+      <div class="spark-intro__badge">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L14 8H20L15 12L17 18L12 14L7 18L9 12L4 8H10L12 2Z"/></svg>
+        Meet Spark
+      </div>
+      <h1>Your AI <em>learning buddy</em></h1>
+      <p class="spark-intro__sub">Spark is a kid-safe AI assistant built for curious minds in grades K&ndash;8. Ask about how AI works, get help with science, spark creative ideas, or pick up smart learning tips.</p>
+    </div>
+
+    <div class="spark-chat" data-spark-root>
+      <div class="spark-chat__bar">
+        <div class="spark-chat__title">
+          <span class="spark-chat__dot"></span>
+          Spark is online
+        </div>
+        <button type="button" class="spark-chat__clear" data-spark-clear>
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
+          New chat
+        </button>
+      </div>
+
+      <div class="spark-stream" data-spark-stream></div>
+
+      <div class="spark-prompts" data-spark-prompts></div>
+
+      <form class="spark-composer" data-spark-form>
+        <textarea
+          class="spark-textarea"
+          data-spark-input
+          rows="1"
+          placeholder="Ask Spark anything..."
+          autocomplete="off"></textarea>
+        <button type="submit" class="spark-send-btn" data-spark-send aria-label="Send message">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+        </button>
+      </form>
+
+      <p class="spark-disclaimer">Spark is an AI and can make mistakes. Always double-check important facts, and never share personal information like your full name, address, or school.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ─── FOOTER ────────────────────────────────── -->
+<footer class="footer">
+  <div class="wrap">
+    <div class="footer__inner">
+      <div class="footer__brand">
+        <div class="footer__logo">AI<span>+</span>Kids</div>
+        <p>A student-led community initiative focused on digital equity and responsible AI education for every child.</p>
+      </div>
+      <div>
+        <div class="footer__col-title">Pages</div>
+        <ul class="footer__links">
+          <li><a href="index.html">About</a></li>
+          <li><a href="programs.html">Programs</a></li>
+          <li><a href="impact.html">Impact</a></li>
+          <li><a href="spark.html">Spark</a></li>
+          <li><a href="index.html#faq">FAQ</a></li>
+          <li><a href="contact.html">Contact</a></li>
+        </ul>
+      </div>
+      <div>
+        <div class="footer__col-title">Programs</div>
+        <ul class="footer__links">
+          <li><a href="programs.html">AI Basics for Kids</a></li>
+          <li><a href="programs.html">Safe &amp; Responsible AI</a></li>
+          <li><a href="programs.html">Creative AI Learning</a></li>
+          <li><a href="programs.html">Family Resources</a></li>
+        </ul>
+      </div>
+      <div>
+        <div class="footer__col-title">Contact</div>
+        <div class="footer__email">
+          <a href="mailto:info@aipluskids.org">info@aipluskids.org</a>
+        </div>
+      </div>
+      <div>
+        <div class="footer__col-title">Spark</div>
+        <a href="spark.html" class="spark-link">Chat with Spark</a>
+        <p style="font-size:.75rem;color:rgba(255,255,255,.3);margin-top:6px;line-height:1.4">Our kid-safe AI learning buddy</p>
+      </div>
+    </div>
+    <div class="footer__bottom">
+      <span class="footer__copy">&copy; 2025 AI + Kids. All rights reserved.</span>
+      <span class="footer__copy">Student-Led · Community Driven · Nonprofit Initiative</span>
+    </div>
+  </div>
+</footer>
+
+<script src="js/nav.js"></script>
+<script src="js/spark.js"></script>
+</body>
+</html>

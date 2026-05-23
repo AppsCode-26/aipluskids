@@ -1,17 +1,25 @@
-/* ─── Spark — AI + Kids Chat Widget ─────────────────── */
+/* ════════════════════════════════════════════════════════════
+   Spark — AI + Kids learning assistant
+   Full-page chat engine powered by Google Gemini
+   ════════════════════════════════════════════════════════════ */
 
-const GEMINI_API_KEY = 'AIzaSyAz5ezzRAidUbiJVsxA7CMzdCFoHK0f9Tk';
-const GEMINI_MODEL   = 'gemini-2.0-flash';
-const GEMINI_API_URL =
-  `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:streamGenerateContent`;
+const SPARK = {
+  apiKey: 'AIzaSyBGzs8GS4ObpciID2WvL85PfNHCGeM3kvc',
+  model:  'gemini-2.5-flash',
+  get url() {
+    return `https://generativelanguage.googleapis.com/v1beta/models/${this.model}:streamGenerateContent`;
+  },
+};
 
-const SYSTEM_INSTRUCTION = `You are Spark, a friendly and enthusiastic AI learning assistant for AI Plus Kids,
+const SYSTEM_INSTRUCTION = `You are Spark, a friendly and enthusiastic AI learning assistant for AI + Kids,
 a nonprofit that teaches K–8 students about artificial intelligence.
+
 Your personality:
 - Warm, encouraging, and age-appropriate for children in grades K–8
 - Patient and clear — use simple language, short sentences, and relatable examples
 - Curious and enthusiastic about learning and technology
 - Honest about what you don't know or what AI can't do
+
 Your rules:
 1. Always prioritize child safety. Never produce content that is violent, sexual, scary, or harmful.
 2. If a child asks something inappropriate, gently redirect: "That's not something I can help with, but let's talk about something cool instead!"
@@ -19,148 +27,306 @@ Your rules:
 4. Be honest that you are an AI and can make mistakes — encourage kids to verify important facts.
 5. Promote responsible AI use: help kids think and learn, rather than doing their work for them.
 6. When helping with homework, guide with hints and explanations rather than giving direct answers.
-7. Keep responses concise and easy to read — use bullet points, simple lists, and short paragraphs.
+7. Keep responses concise and easy to read — use short paragraphs, and use markdown bullet lists ("- ") or **bold** when it helps.
 8. Celebrate curiosity! Every question is a great question.
+
 Topics you love: AI, technology, science, creative writing, learning tips, how things work.
 Topics to avoid or gently redirect: anything unsafe, political, adult, or outside your role.`;
 
-/* ── state ── */
-const chatHistory = [];          // { role, parts:[{text}] }
-let   isStreaming = false;
+const SAFETY_SETTINGS = [
+  { category: 'HARM_CATEGORY_HARASSMENT',        threshold: 'BLOCK_LOW_AND_ABOVE' },
+  { category: 'HARM_CATEGORY_HATE_SPEECH',       threshold: 'BLOCK_LOW_AND_ABOVE' },
+  { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: 'BLOCK_LOW_AND_ABOVE' },
+  { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_LOW_AND_ABOVE' },
+];
 
-/* ── DOM refs (set on init) ── */
-let chatPanel, chatMessages, chatInput, chatSend, chatToggle, chatBadge;
+const WELCOME =
+  "Hi there! I'm **Spark**, your AI learning buddy. I can explain how AI works, help with science questions, spark creative ideas, and share learning tips. What would you like to explore today?";
 
-/* ── helpers ── */
-function scrollBottom() {
-  chatMessages.scrollTop = chatMessages.scrollHeight;
+const STARTERS = [
+  'What is artificial intelligence?',
+  'How does a computer learn?',
+  'Help me write a short story',
+  'Give me a fun science fact',
+  'How can I use AI safely?',
+];
+
+/* ─── tiny, safe markdown renderer ─────────────────────────── */
+function escapeHtml(s) {
+  return s.replace(/[&<>"']/g, c => (
+    { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]
+  ));
 }
 
-function addBubble(role, text) {
-  const div = document.createElement('div');
-  div.className = `spark-bubble spark-${role}`;
-  div.textContent = text;
-  chatMessages.appendChild(div);
-  scrollBottom();
-  return div;
+function renderMarkdown(text) {
+  const lines = escapeHtml(text).split('\n');
+  let html = '';
+  let listType = null; // 'ul' | 'ol' | null
+
+  const closeList = () => { if (listType) { html += `</${listType}>`; listType = null; } };
+
+  const inline = (s) => s
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/(^|[^*])\*(?!\*)([^*]+?)\*(?!\*)/g, '$1<em>$2</em>')
+    .replace(/`([^`]+?)`/g, '<code>$1</code>');
+
+  for (let raw of lines) {
+    const line = raw.trimEnd();
+    const ul = line.match(/^\s*[-*]\s+(.*)$/);
+    const ol = line.match(/^\s*\d+\.\s+(.*)$/);
+
+    if (ul) {
+      if (listType !== 'ul') { closeList(); html += '<ul>'; listType = 'ul'; }
+      html += `<li>${inline(ul[1])}</li>`;
+    } else if (ol) {
+      if (listType !== 'ol') { closeList(); html += '<ol>'; listType = 'ol'; }
+      html += `<li>${inline(ol[1])}</li>`;
+    } else if (line.trim() === '') {
+      closeList();
+    } else {
+      closeList();
+      html += `<p>${inline(line)}</p>`;
+    }
+  }
+  closeList();
+  return html || `<p>${inline(escapeHtml(''))}</p>`;
 }
 
-/* ── stream a Gemini response ── */
-async function sendMessage(userText) {
-  if (isStreaming || !userText.trim()) return;
-  isStreaming = true;
-  chatSend.disabled = true;
+/* ─── Spark chat controller ────────────────────────────────── */
+class SparkChat {
+  constructor(root) {
+    this.root      = root;
+    this.stream    = root.querySelector('[data-spark-stream]');
+    this.form      = root.querySelector('[data-spark-form]');
+    this.input     = root.querySelector('[data-spark-input]');
+    this.sendBtn   = root.querySelector('[data-spark-send]');
+    this.clearBtn  = root.querySelector('[data-spark-clear]');
+    this.prompts   = root.querySelector('[data-spark-prompts]');
 
-  // user bubble
-  addBubble('user', userText);
-  chatHistory.push({ role: 'user', parts: [{ text: userText }] });
+    this.history   = [];
+    this.busy      = false;
 
-  // bot bubble (will be filled progressively)
-  const botDiv = addBubble('model', '');
-  botDiv.innerHTML = '<span class="spark-dot"></span><span class="spark-dot"></span><span class="spark-dot"></span>';
+    this.bindEvents();
+    this.reset();
+  }
 
-  const body = {
-    system_instruction: { parts: [{ text: SYSTEM_INSTRUCTION }] },
-    contents: chatHistory,
-    generationConfig: { temperature: 0.7, maxOutputTokens: 512 }
-  };
+  bindEvents() {
+    this.form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      this.submit();
+    });
 
-  try {
-    const res = await fetch(`${GEMINI_API_URL}?alt=sse&key=${GEMINI_API_KEY}`, {
+    // Enter to send, Shift+Enter for newline
+    this.input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        this.submit();
+      }
+    });
+
+    // auto-grow textarea
+    this.input.addEventListener('input', () => this.autoGrow());
+
+    if (this.clearBtn) {
+      this.clearBtn.addEventListener('click', () => this.reset());
+    }
+
+    if (this.prompts) {
+      this.prompts.addEventListener('click', (e) => {
+        const chip = e.target.closest('[data-prompt]');
+        if (!chip) return;
+        this.input.value = chip.dataset.prompt;
+        this.autoGrow();
+        this.submit();
+      });
+    }
+  }
+
+  autoGrow() {
+    this.input.style.height = 'auto';
+    this.input.style.height = Math.min(this.input.scrollHeight, 160) + 'px';
+  }
+
+  reset() {
+    this.history = [];
+    this.stream.innerHTML = '';
+    this.addMessage('bot', WELCOME);
+    this.renderStarters();
+    this.input.value = '';
+    this.autoGrow();
+    this.input.focus();
+  }
+
+  renderStarters() {
+    if (!this.prompts) return;
+    this.prompts.innerHTML = STARTERS
+      .map(p => `<button type="button" class="spark-chip" data-prompt="${escapeHtml(p)}">${escapeHtml(p)}</button>`)
+      .join('');
+    this.prompts.style.display = 'flex';
+  }
+
+  hideStarters() {
+    if (this.prompts) this.prompts.style.display = 'none';
+  }
+
+  addMessage(role, text) {
+    const row = document.createElement('div');
+    row.className = `spark-msg spark-msg--${role}`;
+
+    if (role === 'bot') {
+      row.innerHTML = `
+        <div class="spark-avatar" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L14 8H20L15 12L17 18L12 14L7 18L9 12L4 8H10L12 2Z"/></svg>
+        </div>
+        <div class="spark-text"></div>`;
+      row.querySelector('.spark-text').innerHTML = renderMarkdown(text);
+    } else {
+      row.innerHTML = `<div class="spark-text"></div>`;
+      row.querySelector('.spark-text').textContent = text;
+    }
+
+    this.stream.appendChild(row);
+    this.scrollDown();
+    return row.querySelector('.spark-text');
+  }
+
+  showTyping() {
+    const row = document.createElement('div');
+    row.className = 'spark-msg spark-msg--bot';
+    row.innerHTML = `
+      <div class="spark-avatar" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L14 8H20L15 12L17 18L12 14L7 18L9 12L4 8H10L12 2Z"/></svg>
+      </div>
+      <div class="spark-text"><span class="spark-typing"><i></i><i></i><i></i></span></div>`;
+    this.stream.appendChild(row);
+    this.scrollDown();
+    return row;
+  }
+
+  scrollDown() {
+    this.stream.scrollTop = this.stream.scrollHeight;
+  }
+
+  setBusy(state) {
+    this.busy = state;
+    this.sendBtn.disabled = state;
+    this.input.disabled = state;
+  }
+
+  async submit() {
+    const text = this.input.value.trim();
+    if (!text || this.busy) return;
+
+    this.hideStarters();
+    this.addMessage('user', text);
+    this.history.push({ role: 'user', parts: [{ text }] });
+
+    this.input.value = '';
+    this.autoGrow();
+    this.setBusy(true);
+
+    const typingRow = this.showTyping();
+    let target = null;
+
+    try {
+      const reply = await this.streamReply((token, full) => {
+        if (!target) {
+          typingRow.remove();
+          target = this.addMessage('bot', '');
+        }
+        target.innerHTML = renderMarkdown(full);
+        this.scrollDown();
+      });
+
+      if (!target) {
+        typingRow.remove();
+        target = this.addMessage('bot', '');
+      }
+      const finalText = reply || "Hmm, I didn't catch that. Could you try asking again?";
+      target.innerHTML = renderMarkdown(finalText);
+      this.history.push({ role: 'model', parts: [{ text: finalText }] });
+
+    } catch (err) {
+      console.error('Spark error:', err);
+      typingRow.remove();
+      const msg = this.errorMessage(err);
+      this.addMessage('bot', msg);
+      // drop the failed user turn so retry stays clean
+      this.history.pop();
+    } finally {
+      this.setBusy(false);
+      this.input.focus();
+      this.scrollDown();
+    }
+  }
+
+  errorMessage(err) {
+    const m = String(err && err.message || err);
+    if (m.includes('429')) return "I'm getting a lot of questions right now! Please wait a moment and try again.";
+    if (m.includes('40'))  return "Something went wrong reaching my brain. Please try again in a moment.";
+    if (m.toLowerCase().includes('failed to fetch') || m.toLowerCase().includes('network'))
+      return "I can't connect right now. Please check your internet connection and try again.";
+    return "Oops! Something went wrong. Please try again in a moment.";
+  }
+
+  /* Stream a response from Gemini, calling onToken(token, fullSoFar) */
+  async streamReply(onToken) {
+    const body = {
+      system_instruction: { parts: [{ text: SYSTEM_INSTRUCTION }] },
+      contents: this.history,
+      generationConfig: {
+        temperature: 0.75,
+        maxOutputTokens: 1024,
+        topP: 0.95,
+        thinkingConfig: { thinkingBudget: 0 },  // disable thinking for fast, kid-friendly answers
+      },
+      safetySettings: SAFETY_SETTINGS,
+    };
+
+    const res = await fetch(`${SPARK.url}?alt=sse&key=${SPARK.apiKey}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body)
+      body: JSON.stringify(body),
     });
 
     if (!res.ok) throw new Error(`API ${res.status}`);
 
-    const reader = res.body.getReader();
+    const reader  = res.body.getReader();
     const decoder = new TextDecoder();
-    let full = '';
-    botDiv.textContent = '';
+    let buffer = '';   // holds incomplete SSE lines across chunks
+    let full   = '';
 
     while (true) {
       const { done, value } = await reader.read();
       if (done) break;
-      const chunk = decoder.decode(value, { stream: true });
-      // SSE lines that start with "data: "
-      for (const line of chunk.split('\n')) {
+
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n');
+      buffer = lines.pop();   // keep the (possibly incomplete) last line
+
+      for (const line of lines) {
         if (!line.startsWith('data: ')) continue;
+        const payload = line.slice(6).trim();
+        if (!payload || payload === '[DONE]') continue;
+
         try {
-          const json = JSON.parse(line.slice(6));
-          const token = json?.candidates?.[0]?.content?.parts?.[0]?.text;
-          if (token) { full += token; botDiv.textContent = full; scrollBottom(); }
-        } catch (_) { /* partial JSON, skip */ }
+          const json   = JSON.parse(payload);
+          const token  = json?.candidates?.[0]?.content?.parts?.[0]?.text;
+          const reason = json?.candidates?.[0]?.finishReason;
+          if (token) { full += token; onToken(token, full); }
+          if (reason && reason !== 'STOP' && reason !== 'MAX_TOKENS') {
+            full += "\n\nI can't help with that, but I'm happy to answer other questions!";
+            onToken('', full);
+          }
+        } catch (_) { /* partial JSON across chunks — ignore */ }
       }
     }
-
-    if (!full) full = "Hmm, I didn't get a response. Try asking again!";
-    botDiv.textContent = full;
-    chatHistory.push({ role: 'model', parts: [{ text: full }] });
-
-  } catch (err) {
-    console.error('Spark error:', err);
-    botDiv.textContent = "Oops! Something went wrong. Please try again in a moment.";
+    return full;
   }
-
-  isStreaming = false;
-  chatSend.disabled = false;
-  chatInput.focus();
-  scrollBottom();
 }
 
-/* ── build chat panel (no floating widget) ── */
-function initSpark() {
-  // panel
-  chatPanel = document.createElement('div');
-  chatPanel.className = 'spark-panel';
-  chatPanel.innerHTML = `
-    <div class="spark-header">
-      <div class="spark-header-left">
-        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L14 8H20L15 12L17 18L12 14L7 18L9 12L4 8H10L12 2Z"/></svg>
-        <span>Spark</span>
-      </div>
-      <button class="spark-close" aria-label="Close chat">&times;</button>
-    </div>
-    <div class="spark-messages"></div>
-    <form class="spark-form">
-      <input type="text" class="spark-input" placeholder="Ask Spark anything..." autocomplete="off"/>
-      <button type="submit" class="spark-send" aria-label="Send">
-        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-      </button>
-    </form>`;
-
-  document.body.appendChild(chatPanel);
-
-  chatMessages = chatPanel.querySelector('.spark-messages');
-  chatInput    = chatPanel.querySelector('.spark-input');
-  chatSend     = chatPanel.querySelector('.spark-send');
-  const chatClose = chatPanel.querySelector('.spark-close');
-  const chatForm  = chatPanel.querySelector('.spark-form');
-
-  // welcome message
-  addBubble('model', "Hi there! I'm Spark, your AI learning buddy. Ask me anything about AI, science, or how things work!");
-
-  // footer link opens panel
-  document.querySelectorAll('.spark-link').forEach(link => {
-    link.addEventListener('click', (e) => {
-      e.preventDefault();
-      chatPanel.classList.add('open');
-      chatInput.focus();
-    });
-  });
-
-  chatClose.addEventListener('click', () => {
-    chatPanel.classList.remove('open');
-  });
-
-  chatForm.addEventListener('submit', (e) => {
-    e.preventDefault();
-    const text = chatInput.value.trim();
-    if (!text) return;
-    chatInput.value = '';
-    sendMessage(text);
-  });
-}
-
-document.addEventListener('DOMContentLoaded', initSpark);
+/* ─── boot ──────────────────────────────────────────────────── */
+document.addEventListener('DOMContentLoaded', () => {
+  const root = document.querySelector('[data-spark-root]');
+  if (root) new SparkChat(root);
+});
