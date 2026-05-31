@@ -1,0 +1,1101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<meta name="description" content="AI Playground — try Teachable AI (offline, learns only what you teach it) and Spark (cloud AI powered by Google Gemini). Part of AI + Kids."/>
+<title>AI Playground — AI + Kids</title>
+<link rel="stylesheet" href="css/styles.css"/>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><path fill='%230d7c82' d='M50 5L62 35H95L68 57L78 88L50 68L22 88L32 57L5 35H38L50 5Z'/></svg>">
+
+<style>
+/* ════════════════════════════════════════════════════════════════════════
+   AI PLAYGROUND  —  styles scoped so they don't touch the AIpluskids nav
+   or footer. All global-element overrides are prefixed with
+   .playground-section so the nav burger, footer, and headings stay intact.
+   ════════════════════════════════════════════════════════════════════════ */
+
+/* ── New `:root` tokens only (additive — not redefining AIpluskids tokens) */
+:root {
+  --indigo:  #4f46e5;
+  --sky:     #0284c7;
+  --violet:  #7c3aed;
+  --high:    #16a34a;
+  --med:     #d97706;
+  --low:     #dc2626;
+  --pg-muted:#64748b;
+  --pg-line: #e2e8f0;
+  --pg-ink:  #1e293b;
+  --radius:  20px;
+}
+
+/* ── Playground wrapper — sets the gradient background */
+.playground-section {
+  background: linear-gradient(160deg, #eef2ff 0%, #faf5ff 55%, #fdf2f8 100%);
+  min-height: calc(100vh - 64px);
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  color: var(--pg-ink);
+  line-height: 1.5;
+}
+
+/* ── Fix h1/h2 so AIpluskids's serif font doesn't bleed into the playground */
+.playground-section header h1 {
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+  font-size: clamp(28px, 5vw, 44px);
+  font-weight: 800;
+  margin: 0 0 6px;
+  color: var(--pg-ink);
+}
+.playground-section .card h2,
+.playground-section .spark-intro h1 {
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+  color: var(--pg-ink);
+}
+
+/* ── Scope button reset to playground only (avoids breaking AIpluskids nav) */
+.playground-section button {
+  font-family: inherit;
+  font-size: 18px;
+  font-weight: 700;
+  border: none;
+  border-radius: 14px;
+  padding: 14px 20px;
+  cursor: pointer;
+  transition: transform 0.08s, filter 0.15s, box-shadow 0.15s;
+}
+.playground-section button:active { transform: translateY(1px) scale(0.99); }
+.playground-section button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* ── Scope label */
+.playground-section label {
+  display: block;
+  font-weight: 700;
+  margin: 14px 0 6px;
+  font-size: 15px;
+}
+
+/* ── Scope text inputs */
+.playground-section input[type="text"] {
+  width: 100%;
+  font-size: 19px;
+  padding: 14px 16px;
+  border: 2px solid var(--pg-line);
+  border-radius: 14px;
+  outline: none;
+  transition: border-color 0.15s;
+}
+.playground-section input[type="text"]:focus { border-color: var(--indigo); }
+
+/* ── Scope the two-column grid (doesn't touch AIpluskids's .wrap) */
+.playground-section main {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  max-width: 1100px;
+  margin: 26px auto;
+  padding: 0 20px 60px;
+}
+@media (max-width: 860px) { .playground-section main { grid-template-columns: 1fr; } }
+
+/* ── Scope the teach header */
+.playground-section header {
+  text-align: center;
+  padding: 28px 20px 8px;
+}
+
+/* ── Status pill */
+#status {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  margin: 16px auto 0;
+  padding: 10px 18px;
+  border-radius: 999px;
+  font-weight: 600;
+  font-size: 15px;
+  background: #fff;
+  box-shadow: 0 4px 14px rgba(79, 70, 229, 0.12);
+}
+#status.loading { color: var(--indigo); }
+#status.ready   { color: var(--high); }
+#status.error   { color: var(--low); }
+.spinner {
+  width: 16px; height: 16px;
+  border: 3px solid #c7d2fe;
+  border-top-color: var(--indigo);
+  border-radius: 50%;
+  animation: spin 0.9s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── Explainer accordion */
+details.explainer {
+  max-width: 760px;
+  margin: 18px auto 0;
+  background: #ffffffcc;
+  border: 1px solid var(--pg-line);
+  border-radius: var(--radius);
+  padding: 4px 20px;
+}
+details.explainer summary {
+  cursor: pointer;
+  font-weight: 700;
+  padding: 12px 0;
+  font-size: 16px;
+  color: var(--indigo);
+}
+details.explainer p { margin: 8px 0 16px; color: #334155; font-size: .95rem; }
+
+/* ── Cards */
+.card {
+  background: #fff;
+  border-radius: var(--radius);
+  padding: 24px;
+  box-shadow: 0 10px 30px rgba(30, 41, 59, 0.08);
+}
+.card.teach { border-top: 8px solid var(--sky); }
+.card.ask   { border-top: 8px solid var(--violet); }
+.card h2    { margin: 0 0 4px; font-size: 26px; font-weight: 800; }
+.card .hint { color: var(--pg-muted); margin: 0 0 18px; font-size: 15px; }
+
+/* ── Primary action buttons inside cards */
+.btn-primary {
+  width: 100%;
+  margin-top: 16px;
+  color: #fff;
+  box-shadow: 0 6px 16px rgba(2, 132, 199, 0.3);
+}
+.card.teach .btn-primary { background: var(--sky); }
+.card.ask   .btn-primary { background: var(--violet); box-shadow: 0 6px 16px rgba(124, 58, 237, 0.3); }
+.btn-primary:hover:not(:disabled) { filter: brightness(1.06); }
+
+/* ── Toolbar (save / load / starter / forget) */
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 20px;
+  padding-top: 18px;
+  border-top: 1px dashed var(--pg-line);
+}
+.btn-small {
+  font-size: 14px;
+  padding: 10px 14px;
+  background: #f1f5f9;
+  color: #334155;
+  border-radius: 10px;
+}
+.btn-small:hover { background: #e2e8f0; }
+.btn-small.danger { background: #fee2e2; color: var(--low); }
+.btn-small.danger:hover { background: #fecaca; }
+
+/* ── Known examples list */
+.known-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-top: 26px;
+}
+.known-head h3 { margin: 0; font-size: 19px; font-family: inherit; }
+#known-list { list-style: none; margin: 12px 0 0; padding: 0; }
+#known-list li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #f8fafc;
+  border: 1px solid var(--pg-line);
+  border-radius: 12px;
+  padding: 10px 12px;
+  margin-bottom: 8px;
+  animation: pop 0.18s ease-out;
+}
+@keyframes pop { from { transform: scale(0.96); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+#known-list .qa { flex: 1; font-size: 15px; word-break: break-word; }
+#known-list .qa .q { font-weight: 700; }
+#known-list .qa .arrow { color: var(--pg-muted); margin: 0 6px; }
+#known-list .qa .a { color: var(--sky); font-weight: 700; }
+#known-list .del {
+  background: #fff;
+  border: 1px solid var(--pg-line);
+  color: var(--low);
+  width: 34px; height: 34px;
+  border-radius: 50%;
+  font-size: 16px;
+  padding: 0;
+  flex: none;
+}
+#known-list .del:hover { background: #fee2e2; }
+.empty-note { color: var(--pg-muted); font-style: italic; padding: 14px 0; }
+
+/* ── Answer area */
+#answer-area { margin-top: 18px; }
+.answer-card {
+  border-radius: 16px;
+  padding: 20px;
+  border: 2px solid var(--pg-line);
+  animation: pop 0.2s ease-out;
+}
+.answer-card.high { border-color: #bbf7d0; background: #f0fdf4; }
+.answer-card.med  { border-color: #fde68a; background: #fffbeb; }
+.answer-card.low  { border-color: #fecaca; background: #fef2f2; }
+.changed-badge {
+  display: inline-block;
+  font-size: 13px;
+  font-weight: 700;
+  background: var(--violet);
+  color: #fff;
+  padding: 4px 10px;
+  border-radius: 999px;
+  margin-bottom: 12px;
+}
+.asked-q { font-size: 14px; color: var(--pg-muted); margin-bottom: 10px; }
+.asked-q b { color: var(--pg-ink); }
+.answer-label { font-size: 14px; color: var(--pg-muted); font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; }
+.answer-big {
+  font-size: clamp(30px, 6vw, 46px);
+  font-weight: 800;
+  margin: 2px 0 14px;
+  word-break: break-word;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+}
+.answer-card.high .answer-big { color: var(--high); }
+.answer-card.med  .answer-big { color: var(--med); }
+.answer-card.low  .answer-big { color: var(--low); }
+.conf-row { display: flex; align-items: center; gap: 12px; margin-bottom: 6px; }
+.conf-name { font-weight: 700; }
+.conf-pct  { margin-left: auto; font-variant-numeric: tabular-nums; font-weight: 700; }
+.conf-bar  { height: 16px; background: #e5e7eb; border-radius: 999px; overflow: hidden; }
+.conf-fill { height: 100%; border-radius: 999px; transition: width 0.4s ease; }
+.answer-card.high .conf-fill { background: var(--high); }
+.answer-card.med  .conf-fill { background: var(--med); }
+.answer-card.low  .conf-fill { background: var(--low); }
+.warn-banner {
+  margin-top: 14px;
+  background: #fff;
+  border: 2px dashed var(--low);
+  color: #7f1d1d;
+  border-radius: 12px;
+  padding: 12px 14px;
+  font-weight: 600;
+}
+.why { margin-top: 16px; background: #ffffffaa; border-radius: 12px; padding: 14px; }
+.why p { margin: 0 0 8px; color: #334155; font-size: .95rem; }
+.matched-box { background: #fff; border: 1px solid var(--pg-line); border-radius: 10px; padding: 10px 12px; font-size: 16px; }
+.matched-box .q  { font-weight: 700; }
+.matched-box .arrow { color: var(--pg-muted); margin: 0 6px; }
+.matched-box .a  { color: var(--sky); font-weight: 700; }
+details.runners { margin-top: 14px; }
+details.runners summary { cursor: pointer; font-weight: 700; color: var(--indigo); }
+.runner { display: grid; grid-template-columns: 1fr auto; gap: 4px 10px; margin-top: 10px; font-size: 14px; }
+.runner .r-qa  { color: #334155; }
+.runner .r-pct { font-variant-numeric: tabular-nums; font-weight: 700; color: var(--pg-muted); }
+.runner .r-bar { grid-column: 1 / -1; height: 8px; background: #e5e7eb; border-radius: 999px; overflow: hidden; }
+.runner .r-fill { height: 100%; background: #94a3b8; border-radius: 999px; }
+.placeholder { text-align: center; color: var(--pg-muted); padding: 30px 10px; }
+.placeholder .big-emoji { font-size: 54px; display: block; margin-bottom: 8px; }
+
+/* ── Small credit line at the bottom of the teach view */
+.pg-credit {
+  text-align: center;
+  color: var(--pg-muted);
+  font-size: 13px;
+  padding: 0 20px 32px;
+}
+
+/* ════ TAB BAR — sits sticky BELOW the AIpluskids nav (top: 64px) ════ */
+.tabbar {
+  position: sticky;
+  top: 64px;          /* AIpluskids nav is 64px tall */
+  z-index: 50;
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--pg-line);
+}
+.tabbar__inner {
+  max-width: 1100px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  flex-wrap: wrap;
+}
+.tabbar__brand {
+  font-weight: 800;
+  font-size: 17px;
+  margin-right: 8px;
+  color: var(--pg-ink);
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+}
+.tab {
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+  font-size: 15px;
+  font-weight: 800;
+  padding: 10px 20px;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--pg-muted);
+  box-shadow: none;
+  border: none;
+  cursor: pointer;
+  transition: background 0.12s;
+}
+.tab:hover { background: #eef2f7; }
+.tab--active { color: #fff; }
+.tab[data-tab="teach-view"].tab--active { background: var(--indigo); }
+.tab[data-tab="spark-view"].tab--active { background: var(--teal); }
+
+/* ── View switching */
+.view         { display: none; }
+.view--active { display: block; }
+
+/* ════ SPARK VIEW ════ */
+#spark-view {
+  --bg: #f1f5f9; --white: #fff; --border: #e2e8f0;
+  --ink-60: #64748b; --ink-25: #94a3b8;
+  --teal-d: #0a5b60; --teal-lt: #d7f0f1;
+  background: var(--bg);
+}
+.spark-page { padding: 38px 0 70px; min-height: calc(100vh - 128px); }
+.spark-page .wrap { max-width: 820px; margin: 0 auto; padding: 0 20px; }
+.spark-intro { text-align: center; max-width: 640px; margin: 0 auto 22px; }
+.spark-intro__badge { display:inline-flex;align-items:center;gap:7px;background:var(--teal-lt);color:var(--teal-d);border-radius:100px;padding:6px 14px;font-size:.7rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;margin-bottom:14px }
+.spark-intro__badge svg { width:14px;height:14px }
+.spark-intro h1 { font-size: clamp(24px, 4vw, 36px); margin: 0 0 12px; line-height: 1.15; }
+.spark-intro h1 em { color: var(--teal); font-style: italic; }
+.spark-intro__sub { font-size: 1rem; color: var(--ink-60); line-height: 1.7; margin: 0; }
+.spark-note { max-width: 760px; margin: 0 auto 22px; background:#fff; border:1px solid var(--border); border-left:5px solid var(--teal); border-radius:12px; padding:12px 16px; font-size:.9rem; color:#334155; line-height:1.55 }
+.spark-chat { max-width:760px;margin:0 auto;background:var(--white);border:1.5px solid var(--border);border-radius:18px;box-shadow:0 12px 40px rgba(15,23,42,.06);display:flex;flex-direction:column;overflow:hidden }
+.spark-chat__bar { display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--border);background:var(--white) }
+.spark-chat__title { display:flex;align-items:center;gap:9px;font-size:.85rem;font-weight:700;color:#0f172a }
+.spark-chat__dot { width:8px;height:8px;border-radius:50%;background:#22c55e;box-shadow:0 0 0 3px rgba(34,197,94,.18) }
+.spark-chat__clear { display:inline-flex;align-items:center;gap:6px;background:var(--bg);border:1.5px solid var(--border);color:var(--ink-60);font-size:.78rem;font-weight:700;padding:7px 13px;border-radius:100px;cursor:pointer;transition:border-color .15s,color .15s;box-shadow:none }
+.spark-chat__clear:hover { border-color:var(--teal);color:var(--teal) }
+.spark-stream { flex:1;overflow-y:auto;padding:22px 20px;display:flex;flex-direction:column;gap:18px;min-height:320px;max-height:50vh }
+.spark-msg { display:flex;gap:12px;max-width:100% }
+.spark-msg--user { flex-direction:row-reverse }
+.spark-avatar { width:32px;height:32px;border-radius:9px;background:var(--teal-lt);color:var(--teal);display:grid;place-items:center;flex-shrink:0 }
+.spark-avatar svg { width:17px;height:17px }
+.spark-text { font-size:.95rem;line-height:1.65;border-radius:14px;padding:12px 16px;max-width:78% }
+.spark-msg--bot .spark-text { background:var(--bg);color:#0f172a;border-bottom-left-radius:4px }
+.spark-msg--user .spark-text { background:var(--teal);color:#fff;border-bottom-right-radius:4px }
+.spark-text p { margin:0;color:inherit;font-size:inherit;line-height:1.65 }
+.spark-text p+p { margin-top:9px }
+.spark-text ul,.spark-text ol { margin:8px 0 8px 18px;display:flex;flex-direction:column;gap:4px }
+.spark-text li { font-size:inherit;line-height:1.55;color:inherit }
+.spark-text strong { font-weight:700;color:inherit }
+.spark-text code { font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.85em;background:rgba(15,23,42,.06);padding:1px 5px;border-radius:5px }
+.spark-msg--user .spark-text code { background:rgba(255,255,255,.18) }
+.spark-typing { display:inline-flex;gap:4px;padding:2px 0 }
+.spark-typing i { width:6px;height:6px;border-radius:50%;background:var(--teal);display:inline-block;animation:sparkBounce .6s infinite alternate }
+.spark-typing i:nth-child(2){ animation-delay:.15s }
+.spark-typing i:nth-child(3){ animation-delay:.3s }
+@keyframes sparkBounce { 0%{opacity:.25;transform:translateY(0)}100%{opacity:1;transform:translateY(-4px)} }
+.spark-prompts { display:flex;flex-wrap:wrap;gap:8px;padding:0 20px 16px }
+.spark-chip { background:var(--white);border:1.5px solid var(--border);color:#0f172a;font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;font-size:.82rem;font-weight:600;padding:8px 14px;border-radius:100px;cursor:pointer;transition:border-color .15s,background .15s,color .15s;box-shadow:none }
+.spark-chip:hover { border-color:var(--teal);color:var(--teal);background:var(--teal-lt) }
+.spark-composer { display:flex;align-items:flex-end;gap:10px;padding:14px 16px;border-top:1px solid var(--border);background:var(--white) }
+.spark-textarea { flex:1;resize:none;border:1.5px solid var(--border);border-radius:12px;padding:11px 14px;font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;font-size:.95rem;line-height:1.5;color:#0f172a;outline:none;min-height:46px;max-height:160px;transition:border-color .15s,box-shadow .15s }
+.spark-textarea:focus { border-color:var(--teal);box-shadow:0 0 0 3px rgba(13,124,130,.08) }
+.spark-textarea:disabled { background:var(--bg);opacity:.7 }
+.spark-textarea::placeholder { color:var(--ink-25) }
+.spark-send-btn { background:var(--teal);color:#fff;border:none;border-radius:12px;width:46px;height:46px;padding:0;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:background .15s,transform .15s,opacity .15s;box-shadow:none;font-size:16px }
+.spark-send-btn:hover { background:var(--teal-d);transform:translateY(-1px) }
+.spark-send-btn:disabled { opacity:.4;cursor:not-allowed;transform:none }
+.spark-disclaimer { padding:14px 20px 18px;margin:0;font-size:.78rem;line-height:1.55;color:var(--ink-25);text-align:center }
+@media (max-width:600px){
+  .spark-stream{padding:18px 14px;max-height:45vh}
+  .spark-text{max-width:86%}
+  .spark-prompts{padding:0 14px 14px}
+  .spark-composer{padding:12px}
+}
+</style>
+</head>
+<body>
+
+<!-- ─── AIpluskids NAV ───────────────────────────────────────────────── -->
+<nav class="nav">
+  <div class="wrap nav__inner">
+    <a href="index.html" class="nav__logo">
+      <div class="nav__logo-mark">
+        <svg viewBox="0 0 20 20"><path d="M10 2L12.5 7.5H18L13.5 11L15.5 17L10 13.5L4.5 17L6.5 11L2 7.5H7.5L10 2Z"/></svg>
+      </div>
+      <span class="nav__logo-text">AI<span>+</span>Kids</span>
+    </a>
+    <ul class="nav__links" id="navLinks">
+      <li><a href="index.html">About</a></li>
+      <li><a href="programs.html">Programs</a></li>
+      <li><a href="impact.html">Impact</a></li>
+      <li><a href="spark.html">Spark</a></li>
+      <li><a href="playground.html" class="active">AI Playground</a></li>
+      <li><a href="index.html#faq">FAQ</a></li>
+      <li><a href="contact.html">Contact</a></li>
+    </ul>
+    <div class="nav__right">
+      <a href="contact.html" class="btn btn-teal">Get Involved</a>
+    </div>
+    <button class="nav__burger" id="burger" aria-label="Menu">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</nav>
+
+<!-- ─── PLAYGROUND SECTION ─────────────────────────────────────────────
+     Everything inside this div is the AI Playground. Styles are scoped
+     so the nav and footer above/below are completely unaffected.
+     ─────────────────────────────────────────────────────────────────── -->
+<div class="playground-section">
+
+  <!-- Inner tab bar — sticks below the AIpluskids nav at top: 64px -->
+  <nav class="tabbar" aria-label="AI Playground tabs">
+    <div class="tabbar__inner">
+      <span class="tabbar__brand">🧠 AI Playground</span>
+      <button class="tab tab--active" data-tab="teach-view" type="button">🤖 Teachable AI</button>
+      <button class="tab"             data-tab="spark-view" type="button">⭐ Spark</button>
+    </div>
+  </nav>
+
+  <!-- ═══ VIEW 1 — TEACHABLE AI (offline, learns only what you teach it) ═══ -->
+  <div id="teach-view" class="view view--active">
+
+    <header>
+      <h1>🤖 Teachable AI</h1>
+      <p class="tagline" style="font-size:clamp(15px,2.5vw,19px);color:var(--pg-muted);margin:0 auto;max-width:680px;">
+        This robot starts out knowing <b>nothing</b>. It learns <b>only</b> from the
+        examples you give it. Teach it, then ask it questions!
+      </p>
+
+      <div id="status" class="loading">
+        <span class="spinner"></span>
+        <span id="status-text">Waking up the AI brain… (first time downloads ~25 MB)</span>
+      </div>
+
+      <details class="explainer">
+        <summary>🧠 How does the robot think? (click me)</summary>
+        <p>
+          The robot can't read words like we do, so it turns every sentence into a
+          list of numbers called an <b>embedding</b>. The clever part: sentences that
+          <b>mean</b> the same thing get <b>similar</b> numbers — even if the words are
+          different. So <i>"2 times 2"</i> and <i>"two multiplied by two"</i> end up
+          almost the same.
+        </p>
+        <p>
+          To answer your question, the robot compares it to <b>everything you taught
+          it</b> and picks the closest match in meaning. The match strength is the
+          <b>confidence</b> score. If nothing you taught is close, it still guesses —
+          but with <b>low confidence</b>, so you can catch it being confidently wrong!
+        </p>
+        <p>
+          There's no hidden knowledge and no internet lookup. The robot only knows
+          what <b>you</b> teach it — mistakes included. 🙂
+        </p>
+      </details>
+    </header>
+
+    <main>
+      <!-- ── TEACH ── -->
+      <section class="card teach">
+        <h2>📚 Teach the AI</h2>
+        <p class="hint">Give it a question and the answer you want it to remember.</p>
+
+        <label for="teach-q">Question</label>
+        <input id="teach-q" type="text" placeholder="e.g.  2 times 2" autocomplete="off" />
+
+        <label for="teach-a">Answer it should give</label>
+        <input id="teach-a" type="text" placeholder="e.g.  4" autocomplete="off" />
+
+        <button id="teach-btn" class="btn-primary" disabled>➕ Teach it!</button>
+
+        <div class="known-head">
+          <h3>What it knows</h3>
+          <span class="hint" id="count-label">(0 things)</span>
+        </div>
+        <ul id="known-list"></ul>
+
+        <div class="toolbar">
+          <button id="starter-btn" class="btn-small" disabled>✨ Load example pack</button>
+          <button id="save-btn"    class="btn-small">💾 Save to file</button>
+          <button id="load-btn"    class="btn-small">📂 Load from file</button>
+          <button id="forget-btn"  class="btn-small danger">🗑️ Forget everything</button>
+          <input id="file-input" type="file" accept="application/json,.json" hidden />
+        </div>
+      </section>
+
+      <!-- ── ASK ── -->
+      <section class="card ask">
+        <h2>💬 Ask the AI</h2>
+        <p class="hint">Ask in your own words — it doesn't need the exact wording you taught.</p>
+
+        <label for="ask-q">Your question</label>
+        <input id="ask-q" type="text" placeholder="e.g.  what is two multiplied by two" autocomplete="off" />
+
+        <button id="ask-btn" class="btn-primary" disabled>🤔 Ask!</button>
+
+        <div id="answer-area">
+          <div class="placeholder">
+            <span class="big-emoji">🤖</span>
+            Teach me something first, then ask me a question!
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <p class="pg-credit">Runs entirely in your browser · No accounts · No API keys · Works offline after the first load</p>
+
+  </div><!-- /#teach-view -->
+
+  <!-- ═══ VIEW 2 — SPARK (cloud AI, powered by Google Gemini) ═══ -->
+  <div id="spark-view" class="view">
+    <section class="spark-page">
+      <div class="wrap">
+
+        <div class="spark-intro">
+          <div class="spark-intro__badge">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L14 8H20L15 12L17 18L12 14L7 18L9 12L4 8H10L12 2Z"/></svg>
+            Meet Spark
+          </div>
+          <h1>Your AI <em>learning buddy</em></h1>
+          <p class="spark-intro__sub">Spark is a kid-safe AI assistant built for curious minds in grades K&ndash;8. Ask about how AI works, get help with science, spark creative ideas, or pick up smart learning tips.</p>
+        </div>
+
+        <div class="spark-note">
+          💡 <b>A different kind of AI!</b> The <b>Teachable AI</b> tab learns <em>only</em> what you teach it and runs offline in your browser.
+          <b>Spark</b> is a <b>cloud AI</b> (Google Gemini) that already learned from huge amounts of text — so it needs an internet connection to think.
+        </div>
+
+        <div class="spark-chat" data-spark-root>
+          <div class="spark-chat__bar">
+            <div class="spark-chat__title">
+              <span class="spark-chat__dot"></span>
+              Spark is online
+            </div>
+            <button type="button" class="spark-chat__clear" data-spark-clear>
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
+              New chat
+            </button>
+          </div>
+
+          <div class="spark-stream" data-spark-stream></div>
+          <div class="spark-prompts" data-spark-prompts></div>
+
+          <form class="spark-composer" data-spark-form>
+            <textarea
+              class="spark-textarea"
+              data-spark-input
+              rows="1"
+              placeholder="Ask Spark anything..."
+              autocomplete="off"></textarea>
+            <button type="submit" class="spark-send-btn" data-spark-send aria-label="Send message">
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+            </button>
+          </form>
+
+          <p class="spark-disclaimer">Spark is an AI and can make mistakes. Always double-check important facts, and never share personal information like your full name, address, or school.</p>
+        </div>
+
+      </div>
+    </section>
+  </div><!-- /#spark-view -->
+
+</div><!-- /.playground-section -->
+
+<!-- ─── AIpluskids FOOTER ────────────────────────────────────────────── -->
+<footer class="footer">
+  <div class="wrap">
+    <div class="footer__inner">
+      <div class="footer__brand">
+        <div class="footer__logo">AI<span>+</span>Kids</div>
+        <p>A student-led community initiative focused on digital equity and responsible AI education for every child.</p>
+      </div>
+      <div>
+        <div class="footer__col-title">Pages</div>
+        <ul class="footer__links">
+          <li><a href="index.html">About</a></li>
+          <li><a href="programs.html">Programs</a></li>
+          <li><a href="impact.html">Impact</a></li>
+          <li><a href="spark.html">Spark</a></li>
+          <li><a href="playground.html">AI Playground</a></li>
+          <li><a href="index.html#faq">FAQ</a></li>
+          <li><a href="contact.html">Contact</a></li>
+        </ul>
+      </div>
+      <div>
+        <div class="footer__col-title">Programs</div>
+        <ul class="footer__links">
+          <li><a href="programs.html">AI Basics for Kids</a></li>
+          <li><a href="programs.html">Safe &amp; Responsible AI</a></li>
+          <li><a href="programs.html">Creative AI Learning</a></li>
+          <li><a href="programs.html">Family Resources</a></li>
+        </ul>
+      </div>
+      <div>
+        <div class="footer__col-title">Contact</div>
+        <div class="footer__email">
+          <a href="mailto:info@aipluskids.org">info@aipluskids.org</a>
+        </div>
+      </div>
+      <div>
+        <div class="footer__col-title">AI Tools</div>
+        <a href="spark.html" class="spark-link">Chat with Spark</a>
+        <p style="font-size:.75rem;color:rgba(255,255,255,.3);margin-top:6px;line-height:1.4">Our kid-safe AI learning buddy</p>
+        <a href="playground.html" class="spark-link" style="margin-top:10px;display:block">AI Playground</a>
+        <p style="font-size:.75rem;color:rgba(255,255,255,.3);margin-top:6px;line-height:1.4">Teachable AI &amp; Spark side-by-side</p>
+      </div>
+    </div>
+    <div class="footer__bottom">
+      <span class="footer__copy">&copy; 2025 AI + Kids. All rights reserved.</span>
+      <span class="footer__copy">Student-Led · Community Driven · Nonprofit Initiative</span>
+    </div>
+  </div>
+</footer>
+
+<!-- ─── SCRIPTS ──────────────────────────────────────────────────────── -->
+<script src="js/nav.js"></script>
+
+<!-- Teachable AI — ES module for the sentence-embedding AI brain -->
+<script type="module">
+import { pipeline, env } from 'https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.2';
+
+env.allowLocalModels = false;
+env.useBrowserCache = true;
+env.backends.onnx.wasm.numThreads = 1;
+env.backends.onnx.wasm.proxy = false;
+
+let embedder = null;
+let modelReady = false;
+
+async function embed(text) {
+  const output = await embedder(text, { pooling: 'mean', normalize: true });
+  return Array.from(output.data);
+}
+
+function cosineSimilarity(a, b) {
+  let dot = 0, normA = 0, normB = 0;
+  for (let i = 0; i < a.length; i++) {
+    dot   += a[i] * b[i];
+    normA += a[i] * a[i];
+    normB += b[i] * b[i];
+  }
+  return dot / (Math.sqrt(normA) * Math.sqrt(normB) + 1e-8);
+}
+
+let examples = [];
+let lastQuery = null;
+let renderSeq = 0;
+const STORAGE_KEY = 'teachable-ai-examples';
+
+function saveToStorage() {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(examples)); } catch (e) {}
+}
+function loadFromStorage() {
+  try { const raw = localStorage.getItem(STORAGE_KEY); if (raw) examples = JSON.parse(raw); }
+  catch (e) { examples = []; }
+}
+function newId() {
+  return (crypto.randomUUID ? crypto.randomUUID() : 'id-' + Date.now() + '-' + Math.random().toString(16).slice(2));
+}
+function escHtml(s) {
+  return String(s).replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+}
+
+async function teach(question, answer) {
+  question = question.trim(); answer = answer.trim();
+  if (!question || !answer) return;
+  const embedding = await embed(question);
+  const existing = examples.find(e => e.question.trim().toLowerCase() === question.toLowerCase());
+  if (existing) { existing.answer = answer; existing.embedding = embedding; }
+  else examples.push({ id: newId(), question, answer, embedding });
+  saveToStorage(); renderKnownList(); refreshAnswerIfShowing();
+}
+function deleteExample(id) {
+  examples = examples.filter(e => e.id !== id);
+  saveToStorage(); renderKnownList(); refreshAnswerIfShowing();
+}
+function forgetEverything() {
+  if (examples.length && !confirm('Forget everything the AI has learned? This cannot be undone.')) return;
+  examples = []; lastQuery = null; saveToStorage(); renderKnownList(); renderPlaceholder();
+}
+
+async function ask(query) {
+  const qEmb = await embed(query);
+  const ranked = examples.map(ex => ({ example: ex, score: cosineSimilarity(qEmb, ex.embedding) }));
+  ranked.sort((a, b) => b.score - a.score);
+  return ranked;
+}
+
+const $ = id => document.getElementById(id);
+
+function renderKnownList() {
+  const list = $('known-list');
+  $('count-label').textContent = '(' + examples.length + (examples.length === 1 ? ' thing)' : ' things)');
+  if (examples.length === 0) {
+    list.innerHTML = '<li class="empty-note">Nothing yet — the AI is a blank slate. Teach it something! 👆</li>';
+    return;
+  }
+  list.innerHTML = examples.map(ex => `
+    <li>
+      <span class="qa">
+        <span class="q">"${escHtml(ex.question)}"</span>
+        <span class="arrow">→</span>
+        <span class="a">"${escHtml(ex.answer)}"</span>
+      </span>
+      <button class="del" data-id="${ex.id}" title="Delete" aria-label="Delete">✕</button>
+    </li>`).join('');
+}
+function renderPlaceholder() {
+  $('answer-area').innerHTML = `
+    <div class="placeholder">
+      <span class="big-emoji">🤖</span>
+      ${examples.length === 0 ? "I don't know anything yet! Teach me something first. 👈" : "Ask me a question above and I'll find my best match."}
+    </div>`;
+}
+function toPercent(score) { return Math.max(0, Math.min(100, Math.round(score * 100))); }
+function confidenceClass(score) { return score >= 0.45 ? 'high' : score >= 0.30 ? 'med' : 'low'; }
+function confidenceName(score)  { return score >= 0.45 ? 'Pretty sure!' : score >= 0.30 ? 'I think so…' : 'Just a wild guess 🤷'; }
+
+function renderAnswer(ranked, query, reason) {
+  const area = $('answer-area');
+  if (ranked.length === 0) {
+    area.innerHTML = `<div class="answer-card low">
+      <div class="answer-label">Hmm…</div>
+      <div class="answer-big">🤔 I don't know!</div>
+      <p style="color:#7f1d1d">You haven't taught me anything yet. Teach me some examples on the left, then ask again!</p>
+    </div>`; return;
+  }
+  const best = ranked[0];
+  const cls  = confidenceClass(best.score);
+  const pct  = toPercent(best.score);
+  const changedBadge = reason === 'changed'
+    ? `<div class="changed-badge">🔄 My knowledge changed — new answer to "${escHtml(query)}"</div>` : '';
+  const askedLine = reason === 'asked'
+    ? `<div class="asked-q">You asked: <b>"${escHtml(query)}"</b></div>` : '';
+  const lowWarning = cls === 'low'
+    ? `<div class="warn-banner">⚠️ I was never really taught about this. This is only my closest guess — it could be totally wrong! Teach me the right answer so I get smarter.</div>` : '';
+  const runners = ranked.slice(0, 4).map(r => {
+    const p = toPercent(r.score);
+    return `<div class="runner">
+      <span class="r-qa">"${escHtml(r.example.question)}" → "${escHtml(r.example.answer)}"</span>
+      <span class="r-pct">${p}%</span>
+      <span class="r-bar"><span class="r-fill" style="width:${p}%"></span></span>
+    </div>`;
+  }).join('');
+  area.innerHTML = `<div class="answer-card ${cls}">
+    ${changedBadge}${askedLine}
+    <div class="answer-label">My answer</div>
+    <div class="answer-big">${escHtml(best.example.answer)}</div>
+    <div class="conf-row">
+      <span class="conf-name">${confidenceName(best.score)}</span>
+      <span class="conf-pct">${pct}%</span>
+    </div>
+    <div class="conf-bar"><div class="conf-fill" style="width:${pct}%"></div></div>
+    ${lowWarning}
+    <div class="why">
+      <p>🔎 <b>Why I said that:</b> your question is closest in meaning to:</p>
+      <div class="matched-box">
+        <span class="q">"${escHtml(best.example.question)}"</span>
+        <span class="arrow">→</span>
+        <span class="a">"${escHtml(best.example.answer)}"</span>
+      </div>
+      <p style="margin-top:10px">Even if the words were different, the <b>meaning</b> matched ${pct}%.</p>
+    </div>
+    ${ranked.length > 1 ? `<details class="runners"><summary>See how I scored every example</summary>${runners}</details>` : ''}
+  </div>`;
+}
+
+async function refreshAnswerIfShowing() {
+  if (!lastQuery || !modelReady) return;
+  const myId = ++renderSeq;
+  if (examples.length === 0) { renderPlaceholder(); return; }
+  const ranked = await ask(lastQuery);
+  if (myId !== renderSeq) return;
+  renderAnswer(ranked, lastQuery, 'changed');
+}
+
+function saveToFile() {
+  if (examples.length === 0) { alert("There's nothing to save yet — teach the AI something first!"); return; }
+  const data = { app:'teachable-ai', version:1, examples: examples.map(e => ({ question:e.question, answer:e.answer })) };
+  const url = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], { type:'application/json' }));
+  Object.assign(document.createElement('a'), { href:url, download:'my-ai-brain.json' }).click();
+  URL.revokeObjectURL(url);
+}
+async function loadFromFile(file) {
+  let data;
+  try { data = JSON.parse(await file.text()); } catch (e) { alert("That file doesn't look right."); return; }
+  const incoming = Array.isArray(data) ? data : data.examples;
+  if (!Array.isArray(incoming)) { alert("That file doesn't contain any examples."); return; }
+  if (examples.length && !confirm('Replace what the AI currently knows with the examples from this file?')) return;
+  setStatus('loading', 'Reading your examples and rebuilding the AI brain…');
+  examples = [];
+  for (const item of incoming) {
+    if (item && item.question && item.answer)
+      examples.push({ id:newId(), question:String(item.question), answer:String(item.answer), embedding: await embed(String(item.question)) });
+  }
+  saveToStorage(); renderKnownList(); refreshAnswerIfShowing();
+  setStatus('ready', `✅ Loaded ${examples.length} example${examples.length === 1 ? '' : 's'}!`);
+}
+
+const STARTER_PACK = [
+  { question:'2 times 2', answer:'4' },
+  { question:'2 plus 2', answer:'4' },
+  { question:'what color is the sky', answer:'blue' },
+  { question:'what is the capital of France', answer:'Paris' },
+  { question:'how many legs does a spider have', answer:'8' },
+];
+async function loadStarterPack() {
+  setStatus('loading', 'Adding the example pack…');
+  for (const item of STARTER_PACK) {
+    if (!examples.some(e => e.question.toLowerCase() === item.question.toLowerCase()))
+      examples.push({ id:newId(), question:item.question, answer:item.answer, embedding: await embed(item.question) });
+  }
+  saveToStorage(); renderKnownList(); refreshAnswerIfShowing();
+  setStatus('ready', '✅ Example pack added! Try asking in your own words.');
+}
+
+function setStatus(kind, text) {
+  const el = $('status');
+  el.className = kind;
+  $('status-text').textContent = text;
+  const spin = el.querySelector('.spinner');
+  if (spin) spin.style.display = kind === 'loading' ? 'block' : 'none';
+}
+
+function wireEvents() {
+  const doTeach = () => {
+    const q = $('teach-q').value, a = $('teach-a').value;
+    if (!q.trim() || !a.trim()) return;
+    teach(q, a); $('teach-q').value = ''; $('teach-a').value = ''; $('teach-q').focus();
+  };
+  $('teach-btn').addEventListener('click', doTeach);
+  $('teach-q').addEventListener('keydown', e => { if (e.key === 'Enter') $('teach-a').focus(); });
+  $('teach-a').addEventListener('keydown', e => { if (e.key === 'Enter') doTeach(); });
+
+  const doAsk = async () => {
+    const q = $('ask-q').value.trim();
+    if (!q) return;
+    $('ask-q').value = ''; $('ask-q').focus();
+    const myId = ++renderSeq;
+    if (examples.length === 0) { lastQuery = q; renderAnswer([], q, 'asked'); return; }
+    lastQuery = q;
+    setStatus('loading', 'Thinking…');
+    const ranked = await ask(q);
+    if (myId !== renderSeq) return;
+    renderAnswer(ranked, q, 'asked');
+    setStatus('ready', '✅ Ready!');
+  };
+  $('ask-btn').addEventListener('click', doAsk);
+  $('ask-q').addEventListener('keydown', e => { if (e.key === 'Enter') doAsk(); });
+
+  $('known-list').addEventListener('click', e => {
+    const btn = e.target.closest('.del');
+    if (btn) deleteExample(btn.dataset.id);
+  });
+
+  $('forget-btn').addEventListener('click', forgetEverything);
+  $('starter-btn').addEventListener('click', loadStarterPack);
+  $('save-btn').addEventListener('click', saveToFile);
+  $('load-btn').addEventListener('click', () => $('file-input').click());
+  $('file-input').addEventListener('change', e => {
+    if (e.target.files[0]) loadFromFile(e.target.files[0]);
+    e.target.value = '';
+  });
+}
+
+async function init() {
+  loadFromStorage(); renderKnownList(); renderPlaceholder(); wireEvents();
+  try {
+    setStatus('loading', 'Waking up the AI brain… (first time downloads ~25 MB)');
+    embedder = await pipeline('feature-extraction', 'Xenova/all-MiniLM-L6-v2');
+    await embed('hello');
+    for (const ex of examples) { if (!ex.embedding) ex.embedding = await embed(ex.question); }
+    saveToStorage();
+    modelReady = true;
+    $('teach-btn').disabled = false; $('ask-btn').disabled = false; $('starter-btn').disabled = false;
+    setStatus('ready', '✅ Ready! I start out knowing nothing — teach me something!');
+  } catch (err) {
+    console.error(err);
+    setStatus('error', '⚠️ Could not load the AI brain. Check your internet for the first load, or run a local server.');
+  }
+}
+init();
+</script>
+
+<!-- Spark — classic script for the Gemini cloud chatbot -->
+<script>
+const SPARK = { workerUrl: 'https://spark-proxy.n4dwdnrcvt.workers.dev' };
+
+const WELCOME = "Hi there! I'm **Spark**, your AI learning buddy. I can explain how AI works, help with science questions, spark creative ideas, and share learning tips. What would you like to explore today?";
+const STARTERS = [
+  'What is artificial intelligence?',
+  'How does a computer learn?',
+  'Help me write a short story',
+  'Give me a fun science fact',
+  'How can I use AI safely?',
+];
+
+function escapeHtml(s) {
+  return s.replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+}
+function renderMarkdown(text) {
+  const lines = escapeHtml(text).split('\n');
+  let html = '', listType = null;
+  const closeList = () => { if (listType) { html += `</${listType}>`; listType = null; } };
+  const inline = s => s
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/(^|[^*])\*(?!\*)([^*]+?)\*(?!\*)/g, '$1<em>$2</em>')
+    .replace(/`([^`]+?)`/g, '<code>$1</code>');
+  for (let raw of lines) {
+    const line = raw.trimEnd();
+    const ul = line.match(/^\s*[-*]\s+(.*)$/);
+    const ol = line.match(/^\s*\d+\.\s+(.*)$/);
+    if (ul) { if (listType !== 'ul') { closeList(); html += '<ul>'; listType = 'ul'; } html += `<li>${inline(ul[1])}</li>`; }
+    else if (ol) { if (listType !== 'ol') { closeList(); html += '<ol>'; listType = 'ol'; } html += `<li>${inline(ol[1])}</li>`; }
+    else if (line.trim() === '') { closeList(); }
+    else { closeList(); html += `<p>${inline(line)}</p>`; }
+  }
+  closeList();
+  return html || '<p></p>';
+}
+
+class SparkChat {
+  constructor(root) {
+    this.root    = root;
+    this.stream  = root.querySelector('[data-spark-stream]');
+    this.form    = root.querySelector('[data-spark-form]');
+    this.input   = root.querySelector('[data-spark-input]');
+    this.sendBtn = root.querySelector('[data-spark-send]');
+    this.clearBtn= root.querySelector('[data-spark-clear]');
+    this.prompts = root.querySelector('[data-spark-prompts]');
+    this.history = [];
+    this.busy    = false;
+    this.bindEvents();
+    this.reset();
+  }
+  bindEvents() {
+    this.form.addEventListener('submit', e => { e.preventDefault(); this.submit(); });
+    this.input.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); this.submit(); } });
+    this.input.addEventListener('input', () => this.autoGrow());
+    if (this.clearBtn) this.clearBtn.addEventListener('click', () => this.reset());
+    if (this.prompts) this.prompts.addEventListener('click', e => {
+      const chip = e.target.closest('[data-prompt]');
+      if (!chip) return;
+      this.input.value = chip.dataset.prompt; this.autoGrow(); this.submit();
+    });
+  }
+  autoGrow() { this.input.style.height = 'auto'; this.input.style.height = Math.min(this.input.scrollHeight, 160) + 'px'; }
+  reset() {
+    this.history = []; this.stream.innerHTML = '';
+    this.addMessage('bot', WELCOME); this.renderStarters();
+    this.input.value = ''; this.autoGrow();
+  }
+  renderStarters() {
+    if (!this.prompts) return;
+    this.prompts.innerHTML = STARTERS.map(p => `<button type="button" class="spark-chip" data-prompt="${escapeHtml(p)}">${escapeHtml(p)}</button>`).join('');
+    this.prompts.style.display = 'flex';
+  }
+  hideStarters() { if (this.prompts) this.prompts.style.display = 'none'; }
+  addMessage(role, text) {
+    const row = document.createElement('div');
+    row.className = `spark-msg spark-msg--${role}`;
+    if (role === 'bot') {
+      row.innerHTML = `<div class="spark-avatar" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L14 8H20L15 12L17 18L12 14L7 18L9 12L4 8H10L12 2Z"/></svg></div><div class="spark-text"></div>`;
+      row.querySelector('.spark-text').innerHTML = renderMarkdown(text);
+    } else {
+      row.innerHTML = `<div class="spark-text"></div>`;
+      row.querySelector('.spark-text').textContent = text;
+    }
+    this.stream.appendChild(row); this.scrollDown();
+    return row.querySelector('.spark-text');
+  }
+  showTyping() {
+    const row = document.createElement('div');
+    row.className = 'spark-msg spark-msg--bot';
+    row.innerHTML = `<div class="spark-avatar" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L14 8H20L15 12L17 18L12 14L7 18L9 12L4 8H10L12 2Z"/></svg></div><div class="spark-text"><span class="spark-typing"><i></i><i></i><i></i></span></div>`;
+    this.stream.appendChild(row); this.scrollDown(); return row;
+  }
+  scrollDown() { this.stream.scrollTop = this.stream.scrollHeight; }
+  setBusy(state) { this.busy = state; this.sendBtn.disabled = state; this.input.disabled = state; }
+  async submit() {
+    const text = this.input.value.trim();
+    if (!text || this.busy) return;
+    this.hideStarters(); this.addMessage('user', text);
+    this.history.push({ role:'user', parts:[{ text }] });
+    this.input.value = ''; this.autoGrow(); this.setBusy(true);
+    const typingRow = this.showTyping(); let target = null;
+    try {
+      const reply = await this.streamReply((token, full) => {
+        if (!target) { typingRow.remove(); target = this.addMessage('bot', ''); }
+        target.innerHTML = renderMarkdown(full); this.scrollDown();
+      });
+      if (!target) { typingRow.remove(); target = this.addMessage('bot', ''); }
+      const finalText = reply || "Hmm, I didn't catch that. Could you try asking again?";
+      target.innerHTML = renderMarkdown(finalText);
+      this.history.push({ role:'model', parts:[{ text:finalText }] });
+    } catch (err) {
+      console.error('Spark error:', err); typingRow.remove();
+      this.addMessage('bot', this.errorMessage(err)); this.history.pop();
+    } finally { this.setBusy(false); this.input.focus(); this.scrollDown(); }
+  }
+  errorMessage(err) {
+    const m = String(err && err.message || err);
+    if (m.includes('429')) return "I'm getting a lot of questions right now! Please wait a moment and try again.";
+    if (m.includes('40'))  return "Something went wrong reaching my brain. Please try again in a moment.";
+    if (m.toLowerCase().includes('failed to fetch') || m.toLowerCase().includes('network'))
+      return "I can't connect right now. Please check your internet connection and try again.";
+    return "Oops! Something went wrong. Please try again in a moment.";
+  }
+  async streamReply(onToken) {
+    const res = await fetch(SPARK.workerUrl, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ history:this.history }) });
+    if (!res.ok) throw new Error(`API ${res.status}`);
+    const reader = res.body.getReader(), decoder = new TextDecoder();
+    let buffer = '', full = '';
+    while (true) {
+      const { done, value } = await reader.read(); if (done) break;
+      buffer += decoder.decode(value, { stream:true });
+      const lines = buffer.split('\n'); buffer = lines.pop();
+      for (const line of lines) {
+        if (!line.startsWith('data: ')) continue;
+        const payload = line.slice(6).trim();
+        if (!payload || payload === '[DONE]') continue;
+        try {
+          const json  = JSON.parse(payload);
+          const token = json?.candidates?.[0]?.content?.parts?.[0]?.text;
+          const reason= json?.candidates?.[0]?.finishReason;
+          if (token) { full += token; onToken(token, full); }
+          if (reason && reason !== 'STOP' && reason !== 'MAX_TOKENS') { full += "\n\nI can't help with that, but I'm happy to answer other questions!"; onToken('', full); }
+        } catch (_) {}
+      }
+    }
+    return full;
+  }
+}
+
+function bootSpark() {
+  const root = document.querySelector('[data-spark-root]');
+  if (root) window.__sparkChat = new SparkChat(root);
+}
+if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', bootSpark);
+else bootSpark();
+</script>
+
+<!-- Tab switcher -->
+<script>
+(function () {
+  const tabs  = document.querySelectorAll('.tab');
+  const views = document.querySelectorAll('.view');
+  tabs.forEach(tab => tab.addEventListener('click', () => {
+    const target = tab.dataset.tab;
+    tabs.forEach(t => t.classList.toggle('tab--active', t === tab));
+    views.forEach(v => v.classList.toggle('view--active', v.id === target));
+    // Scroll to the tabbar rather than the very top, so the AIpluskids nav stays visible
+    document.querySelector('.tabbar').scrollIntoView({ behavior:'smooth', block:'nearest' });
+    if (target === 'spark-view' && window.__sparkChat) {
+      const i = window.__sparkChat.input;
+      i.focus(); i.style.height = 'auto'; i.style.height = Math.min(i.scrollHeight, 160) + 'px';
+    }
+  }));
+})();
+</script>
+
+</body>
+</html>
