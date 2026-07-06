@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <meta name="robots" content="noindex"/>
+  <title>Admin Console: AI + Kids</title>
+  <link rel="stylesheet" href="css/styles.css"/>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><path fill='%230d7c82' d='M50 5L62 35H95L68 57L78 88L50 68L22 88L32 57L5 35H38L50 5Z'/></svg>">
+  <style>
+    .adm-wrap{max-width:1000px;margin:0 auto;padding:36px 20px 80px}
+    .adm-wrap h1{font-size:1.8rem;margin:0 0 6px;color:#1e1b4b}
+    .adm-sub{color:#6b7280;margin-bottom:28px}
+    .adm-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px;margin-bottom:30px}
+    .adm-stat{background:#fff;border:1px solid #e5e7eb;border-radius:14px;padding:18px;box-shadow:0 4px 14px rgba(0,0,0,.05)}
+    .adm-stat .num{font-size:1.9rem;font-weight:800;color:#6d28d9}
+    .adm-stat .lbl{color:#6b7280;font-size:.82rem;margin-top:4px}
+    .adm-card{background:#fff;border:1px solid #e5e7eb;border-radius:14px;padding:22px;box-shadow:0 4px 14px rgba(0,0,0,.05)}
+    .adm-card h2{font-size:1.1rem;margin:0 0 14px;color:#1e1b4b}
+    table{width:100%;border-collapse:collapse;font-size:.9rem}
+    th,td{text-align:left;padding:10px 12px;border-bottom:1px solid #f3f4f6}
+    th{color:#6b7280;font-size:.75rem;text-transform:uppercase;letter-spacing:.03em}
+    .adm-btn{border:1px solid #d1d5db;background:#f9fafb;border-radius:8px;padding:6px 12px;cursor:pointer;font-size:.8rem;font-weight:600;color:#374151}
+    .adm-btn:hover{border-color:#6d28d9;color:#6d28d9}
+    .adm-msg{margin-top:14px;font-size:.88rem;color:#059669;min-height:1.3em;word-break:break-all}
+    .adm-denied{text-align:center;padding:80px 20px;color:#6b7280}
+    .adm-denied a{color:#6d28d9}
+    .role-pill{font-size:.7rem;font-weight:700;padding:2px 10px;border-radius:999px;background:#ede9fe;color:#6d28d9}
+    .role-pill.user{background:#f3f4f6;color:#6b7280}
+  </style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="wrap nav__inner">
+    <a href="index.html" class="nav__logo">
+      <div class="nav__logo-mark">
+        <svg viewBox="0 0 20 20"><path d="M10 2L12.5 7.5H18L13.5 11L15.5 17L10 13.5L4.5 17L6.5 11L2 7.5H7.5L10 2Z"/></svg>
+      </div>
+      <span class="nav__logo-text">AI<span>+</span>Kids</span>
+    </a>
+    <ul class="nav__links" id="navLinks">
+      <li><a href="index.html">About</a></li>
+      <li><a href="programs.html">Programs</a></li>
+      <li><a href="impact.html">Impact</a></li>
+      <li><a href="playground.html">AI Playground</a></li>
+      <li><a href="index.html#faq">FAQ</a></li>
+      <li><a href="contact.html">Contact</a></li>
+    </ul>
+    <div class="nav__right">
+      <a href="contact.html" class="btn btn-teal">Get Involved</a>
+    </div>
+    <button class="nav__burger" id="burger" aria-label="Menu">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</nav>
+
+<div class="adm-wrap">
+  <div id="adm-loading" class="adm-denied">Checking access…</div>
+
+  <div id="adm-denied" class="adm-denied" style="display:none">
+    <h1>🔒 Master Admin only</h1>
+    <p>This management console is restricted to the Master Admin account.</p>
+    <p><a href="playground.html">← Back to the AI Playground</a></p>
+  </div>
+
+  <div id="adm-panel" style="display:none">
+    <h1>🛠️ Management Console</h1>
+    <div class="adm-sub">System-wide overview — signed in as <b id="adm-who"></b></div>
+
+    <div class="adm-stats" id="adm-stats"></div>
+
+    <div class="adm-card">
+      <h2>All User Accounts</h2>
+      <table>
+        <thead><tr><th>ID</th><th>Username</th><th>Role</th><th>Created (UTC)</th><th>Spark Chats</th><th>AI Models</th><th></th></tr></thead>
+        <tbody id="adm-users"></tbody>
+      </table>
+      <div class="adm-msg" id="adm-msg"></div>
+    </div>
+  </div>
+</div>
+
+<script src="js/nav.js"></script>
+<script src="js/auth.js"></script>
+<script>
+(async function () {
+  const user = await window.AuthReady;
+  const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  document.getElementById('adm-loading').style.display = 'none';
+  if (!user || user.role !== 'admin') {
+    document.getElementById('adm-denied').style.display = '';
+    return;
+  }
+  document.getElementById('adm-panel').style.display = '';
+  document.getElementById('adm-who').textContent = user.username;
+
+  async function refresh() {
+    const [{ stats }, { users }] = await Promise.all([
+      window.AuthAPI.api('/api/admin/stats'),
+      window.AuthAPI.api('/api/admin/users'),
+    ]);
+    document.getElementById('adm-stats').innerHTML = `
+      <div class="adm-stat"><div class="num">${stats.total_users}</div><div class="lbl">User accounts</div></div>
+      <div class="adm-stat"><div class="num">${stats.total_chats}</div><div class="lbl">Spark Chats</div></div>
+      <div class="adm-stat"><div class="num">${stats.total_models}</div><div class="lbl">AI Learning Models</div></div>
+      <div class="adm-stat"><div class="num">${stats.active_sessions}</div><div class="lbl">Active sessions</div></div>`;
+    document.getElementById('adm-users').innerHTML = users.map(u => `
+      <tr>
+        <td>${u.id}</td>
+        <td><b>${esc(u.username)}</b></td>
+        <td><span class="role-pill ${u.role}">${esc(u.role)}</span></td>
+        <td>${esc(u.created_at)}</td>
+        <td>${u.chat_count}</td>
+        <td>${u.model_count}</td>
+        <td><button class="adm-btn" data-id="${u.id}" data-name="${esc(u.username)}">Reset password</button></td>
+      </tr>`).join('');
+  }
+
+  document.getElementById('adm-users').addEventListener('click', async e => {
+    const btn = e.target.closest('button[data-id]');
+    if (!btn) return;
+    const pw = prompt(`New password for "${btn.dataset.name}" (leave blank to auto-generate):`);
+    if (pw === null) return;
+    try {
+      const r = await window.AuthAPI.api(`/api/admin/users/${btn.dataset.id}/reset-password`,
+        { method: 'POST', body: pw ? { newPassword: pw } : {} });
+      document.getElementById('adm-msg').textContent =
+        `Password for "${r.username}" is now: ${r.temporaryPassword} — share it with them, they can sign in right away.`;
+    } catch (err) {
+      document.getElementById('adm-msg').textContent = '⚠️ ' + err.message;
+    }
+  });
+
+  await refresh();
+})();
+</script>
+</body>
+</html>

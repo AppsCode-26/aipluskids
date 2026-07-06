@@ -651,6 +651,8 @@ details.runners summary { cursor: pointer; font-weight: 700; color: var(--indigo
 
 <!-- ─── SCRIPTS ──────────────────────────────────────────────────────── -->
 <script src="js/nav.js"></script>
+<!-- Sign-in gate & account sync (login window in front of the playground) -->
+<script src="js/auth.js"></script>
 
 <!-- Teachable AI — ES module for the sentence-embedding AI brain -->
 <script type="module">
@@ -686,6 +688,7 @@ const STORAGE_KEY = 'teachable-ai-examples';
 
 function saveToStorage() {
   try { localStorage.setItem(STORAGE_KEY, JSON.stringify(examples)); } catch (e) {}
+  window.AuthAPI?.saveTeachable(examples); // sync to the signed-in account
 }
 function loadFromStorage() {
   try { const raw = localStorage.getItem(STORAGE_KEY); if (raw) examples = JSON.parse(raw); }
@@ -901,7 +904,13 @@ function wireEvents() {
 }
 
 async function init() {
-  loadFromStorage(); renderKnownList(); renderPlaceholder(); wireEvents();
+  await window.AuthReady; // wait for sign-in before loading this user's model
+  loadFromStorage();
+  const remote = await window.AuthAPI?.loadTeachable();
+  if (remote && remote.length) {
+    examples = remote.map(e => ({ id: e.id, question: e.question, answer: e.answer }));
+  }
+  renderKnownList(); renderPlaceholder(); wireEvents();
   try {
     setStatus('loading', 'Waking up the AI brain… (first time downloads ~25 MB)');
     embedder = await pipeline('feature-extraction', 'Xenova/all-MiniLM-L6-v2');
@@ -984,6 +993,7 @@ class SparkChat {
   autoGrow() { this.input.style.height = 'auto'; this.input.style.height = Math.min(this.input.scrollHeight, 160) + 'px'; }
   reset() {
     this.history = []; this.stream.innerHTML = '';
+    window.AuthAPI?.startNewChat(); // next save creates a fresh chat log
     this.addMessage('bot', WELCOME); this.renderStarters();
     this.input.value = ''; this.autoGrow();
   }
@@ -1030,6 +1040,7 @@ class SparkChat {
       const finalText = reply || "Hmm, I didn't catch that. Could you try asking again?";
       target.innerHTML = renderMarkdown(finalText);
       this.history.push({ role:'model', parts:[{ text:finalText }] });
+      window.AuthAPI?.saveSparkChat(this.history); // save chat log to account
     } catch (err) {
       console.error('Spark error:', err); typingRow.remove();
       this.addMessage('bot', this.errorMessage(err)); this.history.pop();
