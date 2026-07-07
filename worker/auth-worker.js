@@ -302,6 +302,15 @@ export default {
             (SELECT COUNT(*) FROM sessions WHERE expires_at > ${Date.now()}) AS active_sessions`).first();
           return json({ stats }, 200, origin);
         }
+        mm = p.match(/^\/api\/admin\/users\/(\d+)\/chats$/);
+        if (mm && m === 'GET') {
+          const target = await env.DB.prepare('SELECT id, username FROM users WHERE id = ?').bind(mm[1]).first();
+          if (!target) return json({ error: 'User not found.' }, 404, origin);
+          const { results } = await env.DB.prepare(
+            'SELECT id, title, content, created_at, updated_at FROM spark_chats WHERE user_id = ? ORDER BY updated_at DESC')
+            .bind(target.id).all();
+          return json({ username: target.username, chats: results }, 200, origin);
+        }
         mm = p.match(/^\/api\/admin\/users\/(\d+)\/reset-password$/);
         if (mm && m === 'POST') {
           const target = await env.DB.prepare('SELECT * FROM users WHERE id = ?').bind(mm[1]).first();

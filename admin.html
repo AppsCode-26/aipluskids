@@ -27,6 +27,14 @@
     .adm-denied a{color:#6d28d9}
     .role-pill{font-size:.7rem;font-weight:700;padding:2px 10px;border-radius:999px;background:#ede9fe;color:#6d28d9}
     .role-pill.user{background:#f3f4f6;color:#6b7280}
+    .adm-userlink{background:none;border:none;padding:0;cursor:pointer;font-family:inherit;font-size:inherit;
+      font-weight:700;color:#6d28d9;text-decoration:underline;text-underline-offset:3px}
+    .adm-chat{border:1px solid #eef0f4;border-radius:10px;padding:14px 16px;margin-bottom:12px;background:#fafafa}
+    .adm-chat h3{margin:0 0 4px;font-size:.95rem;color:#1e1b4b}
+    .adm-chat .meta{color:#9ca3af;font-size:.75rem;margin-bottom:8px}
+    .adm-chat pre{white-space:pre-wrap;font-family:inherit;font-size:.86rem;color:#374151;margin:0}
+    #adm-chats-card{margin-top:22px;display:none}
+    #adm-chats-close{float:right}
   </style>
 </head>
 <body data-auth-gate>
@@ -79,6 +87,12 @@
       </table>
       <div class="adm-msg" id="adm-msg"></div>
     </div>
+
+    <div class="adm-card" id="adm-chats-card">
+      <button class="adm-btn" id="adm-chats-close">✕ Close</button>
+      <h2 id="adm-chats-title">Chat history</h2>
+      <div id="adm-chats-list"></div>
+    </div>
   </div>
 </div>
 
@@ -109,7 +123,7 @@
     document.getElementById('adm-users').innerHTML = users.map(u => `
       <tr>
         <td>${u.id}</td>
-        <td><b>${esc(u.username)}</b></td>
+        <td><button class="adm-userlink" data-chats="${u.id}" title="View Spark chat history">${esc(u.username)}</button></td>
         <td><span class="role-pill ${u.role}">${esc(u.role)}</span></td>
         <td>${esc(u.created_at)}</td>
         <td>${u.chat_count}</td>
@@ -118,7 +132,31 @@
       </tr>`).join('');
   }
 
+  async function showChats(userId) {
+    const card = document.getElementById('adm-chats-card');
+    const list = document.getElementById('adm-chats-list');
+    card.style.display = 'block';
+    list.innerHTML = '<p style="color:#6b7280">Loading…</p>';
+    try {
+      const d = await window.AuthAPI.api(`/api/admin/users/${userId}/chats`);
+      document.getElementById('adm-chats-title').textContent = `💬 Spark chat history — ${d.username}`;
+      list.innerHTML = d.chats.length ? d.chats.map(c => `
+        <div class="adm-chat">
+          <h3>${esc(c.title)}</h3>
+          <div class="meta">Started ${esc(c.created_at)} · updated ${esc(c.updated_at)} UTC</div>
+          <pre>${esc(c.content)}</pre>
+        </div>`).join('') : '<p style="color:#6b7280">No Spark chats yet for this user.</p>';
+      card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    } catch (err) {
+      list.innerHTML = '<p style="color:#dc2626">⚠️ ' + esc(err.message) + '</p>';
+    }
+  }
+  document.getElementById('adm-chats-close').onclick = () =>
+    document.getElementById('adm-chats-card').style.display = 'none';
+
   document.getElementById('adm-users').addEventListener('click', async e => {
+    const userBtn = e.target.closest('button[data-chats]');
+    if (userBtn) return showChats(userBtn.dataset.chats);
     const btn = e.target.closest('button[data-id]');
     if (!btn) return;
     const pw = prompt(`New password for "${btn.dataset.name}" (leave blank to auto-generate):`);
