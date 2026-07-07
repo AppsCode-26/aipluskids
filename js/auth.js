@@ -214,42 +214,85 @@
   /* ─── data sync helpers (used by playground scripts) ─────── */
 
   let saveTimer = null;
+  const packExamples = examples =>
+    ({ examples: examples.map(e => ({ id: e.id, question: e.question, answer: e.answer })) });
+  const unpackModel = m => {
+    let ex = [];
+    try { const p = JSON.parse(m.parameters || '{}'); if (Array.isArray(p.examples)) ex = p.examples; } catch (e) {}
+    return { id: m.id, name: m.name, examples: ex, updated_at: m.updated_at };
+  };
+
   window.AuthAPI = {
     get user() { return user; },
     api,
 
-    /* Teachable AI → "AI Learning Models". Saves {question,answer} pairs
-       (embeddings are recomputed locally on load — they're big). */
-    saveTeachable(examples, state) {
+    /* ── Teachable AI → named bots ("AI Learning Models") ──────
+       Each saved bot is one ai_models row; embeddings are
+       recomputed locally on load (they're big). */
+
+    get currentBotId() { return modelId; },
+
+    async listBots() {
+      if (!user) return [];
+      try { return (await api('/api/models')).models.map(unpackModel); }
+      catch (e) { return []; }
+    },
+
+    async saveBot(name, examples) {
+      if (!user) return null;
+      const bots = await this.listBots();
+      const existing = bots.find(b => b.name.toLowerCase() === name.toLowerCase());
+      const body = { name, parameters: packExamples(examples), state: examples.length ? 'ready' : 'draft' };
+      const d = existing
+        ? await api('/api/models/' + existing.id, { method: 'PUT', body })
+        : await api('/api/models', { method: 'POST', body });
+      modelId = d.model.id;
+      return unpackModel(d.model);
+    },
+
+    async loadBot(id) {
+      const bots = await this.listBots();
+      const bot = bots.find(b => b.id === Number(id));
+      if (bot) modelId = bot.id;
+      return bot || null;
+    },
+
+    async loadLatestBot() {
+      const bots = await this.listBots(); // already sorted by updated_at DESC
+      if (!bots.length) return null;
+      modelId = bots[0].id;
+      return bots[0];
+    },
+
+    async deleteBot(id) {
       if (!user) return;
+      await api('/api/models/' + id, { method: 'DELETE' });
+      if (modelId === Number(id)) modelId = null;
+    },
+
+    /* Auto-save edits into the currently loaded/saved bot */
+    autoSaveBot(examples) {
+      if (!user || !modelId) return;
       clearTimeout(saveTimer);
       saveTimer = setTimeout(async () => {
         try {
-          const parameters = { examples: examples.map(e => ({ id: e.id, question: e.question, answer: e.answer })) };
-          const st = state || (examples.length ? 'ready' : 'draft');
-          if (modelId) await api('/api/models/' + modelId, { method: 'PUT', body: { parameters, state: st } });
-          else {
-            const d = await api('/api/models', { method: 'POST', body: { name: 'teachable-ai', parameters, state: st } });
-            modelId = d.model.id;
-          }
-        } catch (e) { console.warn('Teachable sync failed:', e.message); }
+          await api('/api/models/' + modelId, { method: 'PUT', body: {
+            parameters: packExamples(examples), state: examples.length ? 'ready' : 'draft' } });
+        } catch (e) { console.warn('Bot sync failed:', e.message); }
       }, 800);
     },
 
-    async loadTeachable() {
-      if (!user) return null;
-      try {
-        const d = await api('/api/models');
-        const m = d.models.find(x => x.name === 'teachable-ai');
-        if (!m) return null;
-        modelId = m.id;
-        const params = JSON.parse(m.parameters || '{}');
-        return Array.isArray(params.examples) ? params.examples : null;
-      } catch (e) { return null; }
+    /* ── Spark chats → text logs, one row per conversation ───── */
+
+    startNewChat() { currentChatId = null; },
+    resumeChat(id) { currentChatId = Number(id); },
+
+    async listChats() {
+      if (!user) return [];
+      try { return (await api('/api/chats')).chats; }
+      catch (e) { return []; }
     },
 
-    /* Spark chats → text logs, one row per conversation */
-    startNewChat() { currentChatId = null; },
     async saveSparkChat(history) {
       if (!user || !history || !history.length) return;
       try {

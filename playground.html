@@ -514,11 +514,29 @@ details.runners summary { cursor: pointer; font-weight: 700; color: var(--indigo
 
         <div class="toolbar">
           <button id="starter-btn" class="btn-small" disabled>✨ Load example pack</button>
-          <button id="save-btn"    class="btn-small">💾 Save to file</button>
-          <button id="load-btn"    class="btn-small">📂 Load from file</button>
           <button id="forget-btn"  class="btn-small danger">🗑️ Forget everything</button>
-          <input id="file-input" type="file" accept="application/json,.json" hidden />
         </div>
+
+        <!-- ── My Bots: save / reload named Teachable AI builds ── -->
+        <style>
+          .bot-save-bar{display:flex;gap:8px;margin-top:18px}
+          .bot-save-bar input{flex:1;min-width:0}
+          .bot-item{display:flex;align-items:center;gap:10px;justify-content:space-between;
+            padding:9px 12px;border:1px solid #eef0f4;border-radius:10px;margin-top:8px;background:#fafafa;list-style:none}
+          .bot-item .bot-nm{font-weight:700;color:#1e1b4b;font-size:.9rem}
+          .bot-item .hint{font-size:.72rem}
+          .bot-item .row{display:flex;gap:6px;flex:0 0 auto}
+          #bot-list{padding:0;margin:0}
+        </style>
+        <div class="known-head">
+          <h3>🤖 My Bots</h3>
+          <span class="hint">Save your build and come back to it anytime</span>
+        </div>
+        <div class="bot-save-bar">
+          <input id="bot-name" type="text" placeholder="Name your bot  (e.g. Math Whiz)" maxlength="60" autocomplete="off" />
+          <button id="bot-save" class="btn-small">💾 Save bot</button>
+        </div>
+        <ul id="bot-list"><li class="empty-note">Sign in to save and reload your bots.</li></ul>
       </section>
 
       <!-- ── ASK ── -->
@@ -569,11 +587,29 @@ details.runners summary { cursor: pointer; font-weight: 700; color: var(--indigo
               <span class="spark-chat__dot"></span>
               Spark is online
             </div>
-            <button type="button" class="spark-chat__clear" data-spark-clear>
-              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
-              New chat
-            </button>
+            <div style="display:flex;gap:8px">
+              <button type="button" class="spark-chat__clear" data-spark-history>
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                My chats
+              </button>
+              <button type="button" class="spark-chat__clear" data-spark-clear>
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
+                New chat
+              </button>
+            </div>
           </div>
+
+          <style>
+            .spark-history{border-bottom:1px solid #eef0f4;background:#fafbfe;max-height:230px;overflow-y:auto;padding:10px 16px}
+            .spark-history h4{margin:2px 0 8px;font-size:.8rem;color:#6b7280;text-transform:uppercase;letter-spacing:.04em}
+            .spark-history button.sh-item{display:flex;justify-content:space-between;gap:10px;width:100%;text-align:left;
+              border:1px solid #eef0f4;background:#fff;border-radius:9px;padding:9px 12px;margin-bottom:7px;cursor:pointer;font-family:inherit}
+            .spark-history button.sh-item:hover{border-color:#6d28d9}
+            .spark-history .sh-title{font-weight:700;font-size:.86rem;color:#1e1b4b}
+            .spark-history .sh-date{font-size:.7rem;color:#9ca3af;white-space:nowrap}
+            .spark-history .sh-empty{color:#6b7280;font-size:.85rem;padding:6px 0}
+          </style>
+          <div class="spark-history" data-spark-history-panel hidden></div>
 
           <div class="spark-stream" data-spark-stream></div>
           <div class="spark-prompts" data-spark-prompts></div>
@@ -688,7 +724,7 @@ const STORAGE_KEY = 'teachable-ai-examples';
 
 function saveToStorage() {
   try { localStorage.setItem(STORAGE_KEY, JSON.stringify(examples)); } catch (e) {}
-  window.AuthAPI?.saveTeachable(examples); // sync to the signed-in account
+  window.AuthAPI?.autoSaveBot?.(examples); // keep the loaded bot in sync on the account
 }
 function loadFromStorage() {
   try { const raw = localStorage.getItem(STORAGE_KEY); if (raw) examples = JSON.parse(raw); }
@@ -814,27 +850,55 @@ async function refreshAnswerIfShowing() {
   renderAnswer(ranked, lastQuery, 'changed');
 }
 
-function saveToFile() {
-  if (examples.length === 0) { alert("There's nothing to save yet — teach the AI something first!"); return; }
-  const data = { app:'teachable-ai', version:1, examples: examples.map(e => ({ question:e.question, answer:e.answer })) };
-  const url = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], { type:'application/json' }));
-  Object.assign(document.createElement('a'), { href:url, download:'my-ai-brain.json' }).click();
-  URL.revokeObjectURL(url);
-}
-async function loadFromFile(file) {
-  let data;
-  try { data = JSON.parse(await file.text()); } catch (e) { alert("That file doesn't look right."); return; }
-  const incoming = Array.isArray(data) ? data : data.examples;
-  if (!Array.isArray(incoming)) { alert("That file doesn't contain any examples."); return; }
-  if (examples.length && !confirm('Replace what the AI currently knows with the examples from this file?')) return;
-  setStatus('loading', 'Reading your examples and rebuilding the AI brain…');
-  examples = [];
-  for (const item of incoming) {
-    if (item && item.question && item.answer)
-      examples.push({ id:newId(), question:String(item.question), answer:String(item.answer), embedding: await embed(String(item.question)) });
+/* ── My Bots: save / reload named builds on the student's account ── */
+async function refreshBotList() {
+  const ul = $('bot-list');
+  if (!window.AuthAPI || !window.AuthAPI.user) {
+    ul.innerHTML = '<li class="empty-note">Sign in to save and reload your bots.</li>'; return;
   }
+  const bots = await window.AuthAPI.listBots();
+  ul.innerHTML = bots.length ? bots.map(b => `
+    <li class="bot-item">
+      <span><span class="bot-nm">${escHtml(b.name)}</span>
+        <span class="hint">${b.examples.length} thing${b.examples.length === 1 ? '' : 's'} · ${escHtml(b.updated_at)} UTC</span></span>
+      <span class="row">
+        <button class="btn-small" data-loadbot="${b.id}">📂 Load</button>
+        <button class="btn-small danger" data-delbot="${b.id}" aria-label="Delete bot">✕</button>
+      </span>
+    </li>`).join('')
+    : '<li class="empty-note">No saved bots yet — name your bot above and hit 💾 Save!</li>';
+}
+
+async function saveBotClicked() {
+  const name = $('bot-name').value.trim();
+  if (!window.AuthAPI?.user) { alert('Sign in to save your bot!'); return; }
+  if (!name) { alert('Give your bot a name first!'); $('bot-name').focus(); return; }
+  if (!examples.length) { alert("Teach your bot something first — it doesn't know anything yet!"); return; }
+  await window.AuthAPI.saveBot(name, examples);
+  setStatus('ready', `✅ Saved "${name}" to your account!`);
+  refreshBotList();
+}
+
+async function loadBotClicked(id) {
+  const bot = await window.AuthAPI.loadBot(id);
+  if (!bot) return;
+  if (examples.length && !confirm(`Load "${bot.name}"? This replaces what the AI currently knows.`)) return;
+  setStatus('loading', `Loading "${bot.name}" and rebuilding the AI brain…`);
+  examples = [];
+  for (const item of bot.examples) {
+    if (item && item.question && item.answer)
+      examples.push({ id:item.id || newId(), question:String(item.question), answer:String(item.answer),
+        embedding: modelReady ? await embed(String(item.question)) : null });
+  }
+  $('bot-name').value = bot.name;
   saveToStorage(); renderKnownList(); refreshAnswerIfShowing();
-  setStatus('ready', `✅ Loaded ${examples.length} example${examples.length === 1 ? '' : 's'}!`);
+  setStatus('ready', `✅ Loaded "${bot.name}" (${examples.length} thing${examples.length === 1 ? '' : 's'})!`);
+}
+
+async function deleteBotClicked(id, name) {
+  if (!confirm(`Delete the saved bot "${name}"? This cannot be undone.`)) return;
+  await window.AuthAPI.deleteBot(id);
+  refreshBotList();
 }
 
 const STARTER_PACK = [
@@ -895,22 +959,31 @@ function wireEvents() {
 
   $('forget-btn').addEventListener('click', forgetEverything);
   $('starter-btn').addEventListener('click', loadStarterPack);
-  $('save-btn').addEventListener('click', saveToFile);
-  $('load-btn').addEventListener('click', () => $('file-input').click());
-  $('file-input').addEventListener('change', e => {
-    if (e.target.files[0]) loadFromFile(e.target.files[0]);
-    e.target.value = '';
+
+  $('bot-save').addEventListener('click', saveBotClicked);
+  $('bot-name').addEventListener('keydown', e => { if (e.key === 'Enter') saveBotClicked(); });
+  $('bot-list').addEventListener('click', e => {
+    const load = e.target.closest('[data-loadbot]');
+    if (load) return loadBotClicked(load.dataset.loadbot);
+    const del = e.target.closest('[data-delbot]');
+    if (del) {
+      const name = del.closest('.bot-item').querySelector('.bot-nm').textContent;
+      deleteBotClicked(del.dataset.delbot, name);
+    }
   });
 }
 
 async function init() {
-  await window.AuthReady; // wait for sign-in before loading this user's model
+  await window.AuthReady; // wait for sign-in before loading this user's bots
   loadFromStorage();
-  const remote = await window.AuthAPI?.loadTeachable();
-  if (remote && remote.length) {
-    examples = remote.map(e => ({ id: e.id, question: e.question, answer: e.answer }));
+  const latest = await window.AuthAPI?.loadLatestBot?.();
+  if (latest && latest.examples.length) {
+    examples = latest.examples.map(e => ({ id: e.id, question: e.question, answer: e.answer }));
+    const nameInput = document.getElementById('bot-name');
+    if (nameInput) nameInput.value = latest.name;
   }
   renderKnownList(); renderPlaceholder(); wireEvents();
+  refreshBotList();
   try {
     setStatus('loading', 'Waking up the AI brain… (first time downloads ~25 MB)');
     embedder = await pipeline('feature-extraction', 'Xenova/all-MiniLM-L6-v2');
@@ -973,6 +1046,8 @@ class SparkChat {
     this.input   = root.querySelector('[data-spark-input]');
     this.sendBtn = root.querySelector('[data-spark-send]');
     this.clearBtn= root.querySelector('[data-spark-clear]');
+    this.histBtn = root.querySelector('[data-spark-history]');
+    this.histPanel = root.querySelector('[data-spark-history-panel]');
     this.prompts = root.querySelector('[data-spark-prompts]');
     this.history = [];
     this.busy    = false;
@@ -984,6 +1059,11 @@ class SparkChat {
     this.input.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); this.submit(); } });
     this.input.addEventListener('input', () => this.autoGrow());
     if (this.clearBtn) this.clearBtn.addEventListener('click', () => this.reset());
+    if (this.histBtn) this.histBtn.addEventListener('click', () => this.toggleHistory());
+    if (this.histPanel) this.histPanel.addEventListener('click', e => {
+      const item = e.target.closest('[data-chat-id]');
+      if (item) this.loadChat(JSON.parse(item.dataset.chat));
+    });
     if (this.prompts) this.prompts.addEventListener('click', e => {
       const chip = e.target.closest('[data-prompt]');
       if (!chip) return;
@@ -991,7 +1071,41 @@ class SparkChat {
     });
   }
   autoGrow() { this.input.style.height = 'auto'; this.input.style.height = Math.min(this.input.scrollHeight, 160) + 'px'; }
+
+  /* ── previous chats (saved on the student's account) ── */
+  async toggleHistory() {
+    if (!this.histPanel) return;
+    if (!this.histPanel.hidden) { this.histPanel.hidden = true; return; }
+    this.histPanel.hidden = false;
+    if (!window.AuthAPI || !window.AuthAPI.user) {
+      this.histPanel.innerHTML = '<div class="sh-empty">Sign in to see your previous chats.</div>'; return;
+    }
+    this.histPanel.innerHTML = '<div class="sh-empty">Loading your chats…</div>';
+    const chats = await window.AuthAPI.listChats();
+    this.histPanel.innerHTML = '<h4>🕘 Your previous chats</h4>' + (chats.length ? chats.map(c => `
+      <button type="button" class="sh-item" data-chat-id="${c.id}" data-chat='${escapeHtml(JSON.stringify({ id: c.id, title: c.title, content: c.content }))}'>
+        <span class="sh-title">${escapeHtml(c.title)}</span>
+        <span class="sh-date">${escapeHtml(c.updated_at)} UTC</span>
+      </button>`).join('') : '<div class="sh-empty">No chats yet — say hi to Spark!</div>');
+  }
+
+  loadChat(chat) {
+    this.histPanel.hidden = true;
+    this.history = []; this.stream.innerHTML = ''; this.hideStarters();
+    // Transcripts are stored as "Kid: ...\n\nSpark: ..." blocks
+    const blocks = String(chat.content || '').split(/\n\n(?=(?:Kid|Spark): )/);
+    for (const block of blocks) {
+      const m = block.match(/^(Kid|Spark): ([\s\S]*)$/);
+      if (!m || !m[2].trim()) continue;
+      if (m[1] === 'Kid') { this.addMessage('user', m[2]); this.history.push({ role:'user', parts:[{ text: m[2] }] }); }
+      else { this.addMessage('bot', m[2]); this.history.push({ role:'model', parts:[{ text: m[2] }] }); }
+    }
+    window.AuthAPI?.resumeChat?.(chat.id); // continuing appends to this same chat
+    this.input.focus(); this.scrollDown();
+  }
+
   reset() {
+    if (this.histPanel) this.histPanel.hidden = true;
     this.history = []; this.stream.innerHTML = '';
     window.AuthAPI?.startNewChat(); // next save creates a fresh chat log
     this.addMessage('bot', WELCOME); this.renderStarters();
