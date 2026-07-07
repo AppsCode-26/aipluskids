@@ -29,10 +29,25 @@
     .role-pill.user{background:#f3f4f6;color:#6b7280}
     .adm-userlink{background:none;border:none;padding:0;cursor:pointer;font-family:inherit;font-size:inherit;
       font-weight:700;color:#6d28d9;text-decoration:underline;text-underline-offset:3px}
-    .adm-chat{border:1px solid #eef0f4;border-radius:10px;padding:14px 16px;margin-bottom:12px;background:#fafafa}
-    .adm-chat h3{margin:0 0 4px;font-size:.95rem;color:#1e1b4b}
-    .adm-chat .meta{color:#9ca3af;font-size:.75rem;margin-bottom:8px}
-    .adm-chat pre{white-space:pre-wrap;font-family:inherit;font-size:.86rem;color:#374151;margin:0}
+    .adm-chat{border:1px solid #eef0f4;border-radius:10px;margin-bottom:10px;background:#fafafa;overflow:hidden}
+    .adm-chat-head{display:flex;align-items:center;gap:10px;width:100%;padding:13px 16px;border:none;
+      background:transparent;cursor:pointer;font-family:inherit;text-align:left}
+    .adm-chat-head:hover{background:#f3f4f6}
+    .adm-chat-head .chev{color:#6d28d9;font-size:.8rem;transition:transform .15s;flex:0 0 auto}
+    .adm-chat.open .adm-chat-head .chev{transform:rotate(90deg)}
+    .adm-chat-head h3{margin:0;font-size:.95rem;color:#1e1b4b;flex:1}
+    .adm-chat-head .meta{color:#9ca3af;font-size:.73rem;white-space:nowrap}
+    .adm-chat-body{display:none;padding:4px 16px 14px;border-top:1px solid #eef0f4}
+    .adm-chat.open .adm-chat-body{display:block}
+    .adm-msg-row{margin-top:10px;font-size:.87rem;line-height:1.5}
+    .adm-msg-row .who{display:inline-block;font-size:.68rem;font-weight:800;letter-spacing:.04em;
+      text-transform:uppercase;padding:1px 8px;border-radius:999px;margin-bottom:3px}
+    .adm-msg-row.kid .who{background:#e0f2fe;color:#0369a1}
+    .adm-msg-row.spark .who{background:#ede9fe;color:#6d28d9}
+    .adm-msg-row pre{white-space:pre-wrap;font-family:inherit;margin:2px 0 0;color:#374151}
+    .adm-more{display:block;margin:14px auto 2px;border:1px solid #d1d5db;background:#fff;border-radius:999px;
+      padding:7px 18px;cursor:pointer;font-family:inherit;font-size:.82rem;font-weight:700;color:#6d28d9}
+    .adm-more:hover{border-color:#6d28d9}
     #adm-chats-card{margin-top:22px;display:none}
     #adm-chats-close{float:right}
   </style>
@@ -132,6 +147,29 @@
       </tr>`).join('');
   }
 
+  const PAGE_SIZE = 4; // messages shown per click of the "show more" arrow
+  let chatStore = {};  // chat id -> { messages, shown }
+
+  function parseMessages(content) {
+    // Transcripts are stored as "Kid: ...\n\nSpark: ..." blocks
+    return String(content || '').split(/\n\n(?=(?:Kid|Spark): )/).map(block => {
+      const m = block.match(/^(Kid|Spark): ([\s\S]*)$/);
+      return m ? { who: m[1], text: m[2] } : { who: 'Spark', text: block };
+    }).filter(x => x.text.trim());
+  }
+
+  function renderChatBody(id) {
+    const st = chatStore[id];
+    const body = document.querySelector(`.adm-chat[data-chat="${id}"] .adm-chat-body`);
+    const remaining = st.messages.length - st.shown;
+    body.innerHTML = st.messages.slice(0, st.shown).map(msg => `
+      <div class="adm-msg-row ${msg.who === 'Kid' ? 'kid' : 'spark'}">
+        <span class="who">${msg.who === 'Kid' ? '🧒 Kid' : '⚡ Spark'}</span>
+        <pre>${esc(msg.text)}</pre>
+      </div>`).join('') +
+      (remaining > 0 ? `<button class="adm-more" data-more="${id}">⌄ Show more (${remaining} more)</button>` : '');
+  }
+
   async function showChats(userId) {
     const card = document.getElementById('adm-chats-card');
     const list = document.getElementById('adm-chats-list');
@@ -140,17 +178,40 @@
     try {
       const d = await window.AuthAPI.api(`/api/admin/users/${userId}/chats`);
       document.getElementById('adm-chats-title').textContent = `💬 Spark chat history — ${d.username}`;
+      chatStore = {};
+      d.chats.forEach(c => { chatStore[c.id] = { messages: parseMessages(c.content), shown: 0 }; });
       list.innerHTML = d.chats.length ? d.chats.map(c => `
-        <div class="adm-chat">
-          <h3>${esc(c.title)}</h3>
-          <div class="meta">Started ${esc(c.created_at)} · updated ${esc(c.updated_at)} UTC</div>
-          <pre>${esc(c.content)}</pre>
+        <div class="adm-chat" data-chat="${c.id}">
+          <button class="adm-chat-head" data-toggle="${c.id}">
+            <span class="chev">▶</span>
+            <h3>${esc(c.title)}</h3>
+            <span class="meta">${chatStore[c.id].messages.length} messages · ${esc(c.updated_at)} UTC</span>
+          </button>
+          <div class="adm-chat-body"></div>
         </div>`).join('') : '<p style="color:#6b7280">No Spark chats yet for this user.</p>';
       card.scrollIntoView({ behavior: 'smooth', block: 'start' });
     } catch (err) {
       list.innerHTML = '<p style="color:#dc2626">⚠️ ' + esc(err.message) + '</p>';
     }
   }
+
+  document.getElementById('adm-chats-list').addEventListener('click', e => {
+    const head = e.target.closest('[data-toggle]');
+    if (head) {
+      const id = head.dataset.toggle;
+      const box = document.querySelector(`.adm-chat[data-chat="${id}"]`);
+      const opening = !box.classList.contains('open');
+      box.classList.toggle('open', opening);
+      if (opening && chatStore[id].shown === 0) { chatStore[id].shown = PAGE_SIZE; renderChatBody(id); }
+      return;
+    }
+    const more = e.target.closest('[data-more]');
+    if (more) {
+      const id = more.dataset.more;
+      chatStore[id].shown = Math.min(chatStore[id].shown + PAGE_SIZE, chatStore[id].messages.length);
+      renderChatBody(id);
+    }
+  });
   document.getElementById('adm-chats-close').onclick = () =>
     document.getElementById('adm-chats-card').style.display = 'none';
 
