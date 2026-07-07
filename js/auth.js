@@ -24,6 +24,9 @@
   let modelId = null;          // server id of this user's Teachable-AI model
   let readyResolve;
   window.AuthReady = new Promise(res => { readyResolve = res; });
+  // Pages with data-auth-gate on <body> (playground, admin) require sign-in;
+  // everywhere else auth.js only renders the little account icon in the nav.
+  const GATED = document.body.hasAttribute('data-auth-gate');
 
   /* ─── tiny API client ────────────────────────────────────── */
   async function api(path, opts) {
@@ -64,12 +67,23 @@
   .aipk-msg{min-height:1.3em;margin-top:12px;font-size:.86rem;color:#dc2626}
   .aipk-switch{text-align:center;margin-top:16px;font-size:.88rem;color:#6b7280}
   .aipk-switch a{color:#6d28d9;font-weight:600;cursor:pointer;text-decoration:none}
-  .aipk-chip{position:fixed;bottom:16px;right:16px;z-index:9000;display:flex;gap:8px;align-items:center;
-    background:#fff;border:1px solid #e5e7eb;border-radius:999px;box-shadow:0 6px 20px rgba(0,0,0,.12);
-    padding:8px 14px;font-size:.85rem;color:#374151;font-family:inherit}
-  .aipk-chip button,.aipk-chip a{border:none;background:#f3f4f6;border-radius:999px;padding:5px 12px;cursor:pointer;
-    font-size:.8rem;font-weight:600;color:#374151;font-family:inherit;text-decoration:none}
-  .aipk-chip a{background:#ede9fe;color:#6d28d9}
+  .aipk-acct{position:relative;display:flex;align-items:center}
+  .aipk-acct-btn{display:flex;align-items:center;gap:7px;border:none;cursor:pointer;background:transparent;
+    font-family:inherit;padding:4px;border-radius:999px}
+  .aipk-avatar{width:34px;height:34px;border-radius:50%;background:#6d28d9;color:#fff;font-weight:700;
+    font-size:.95rem;display:flex;align-items:center;justify-content:center;flex:0 0 auto}
+  .aipk-avatar--out{background:#eef0f4;color:#4b5563}
+  .aipk-avatar svg{width:18px;height:18px}
+  .aipk-signin-label{font-weight:600;font-size:.9rem;color:#374151;white-space:nowrap}
+  .aipk-menu{position:absolute;top:calc(100% + 10px);right:0;background:#fff;border:1px solid #e5e7eb;
+    border-radius:12px;box-shadow:0 12px 32px rgba(0,0,0,.16);min-width:180px;padding:8px;z-index:9500}
+  .aipk-menu-name{padding:8px 12px;font-weight:700;color:#1e1b4b;font-size:.92rem;border-bottom:1px solid #f3f4f6;margin-bottom:6px}
+  .aipk-menu-name small{display:block;font-weight:500;color:#6b7280;font-size:.74rem;margin-top:2px}
+  .aipk-menu a,.aipk-menu button{display:block;width:100%;box-sizing:border-box;text-align:left;border:none;
+    background:transparent;padding:9px 12px;border-radius:8px;cursor:pointer;font-family:inherit;
+    font-size:.88rem;font-weight:600;color:#374151;text-decoration:none}
+  .aipk-menu a:hover,.aipk-menu button:hover{background:#f3f4f6}
+  .aipk-menu .aipk-out{color:#dc2626}
   .aipk-hide{display:none!important}`;
 
   const overlayHtml = `
@@ -103,9 +117,7 @@
 
   function showGate() {
     if (gateEl) { gateEl.classList.remove('aipk-hide'); return; }
-    const style = document.createElement('style');
-    style.textContent = css;
-    document.head.appendChild(style);
+    ensureStyles();
     gateEl = document.createElement('div');
     gateEl.className = 'aipk-gate';
     gateEl.innerHTML = overlayHtml;
@@ -132,25 +144,69 @@
 
   function hideGate() { if (gateEl) gateEl.classList.add('aipk-hide'); }
 
-  function showChip() {
-    let chip = document.querySelector('.aipk-chip');
-    if (chip) chip.remove();
-    chip = document.createElement('div');
-    chip.className = 'aipk-chip';
-    chip.innerHTML = '⚡ <b>' + String(user.username).replace(/[&<>"']/g, '') + '</b>' +
-      (user.role === 'admin' ? ' <a href="admin.html">Admin</a>' : '') +
-      ' <button id="aipk-logout">Log out</button>';
-    document.body.appendChild(chip);
-    chip.querySelector('#aipk-logout').onclick = async () => {
+  /* ─── nav account widget (next to the Get Involved button) ── */
+
+  const PERSON_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>';
+
+  function ensureStyles() {
+    if (document.getElementById('aipk-styles')) return;
+    const style = document.createElement('style');
+    style.id = 'aipk-styles';
+    style.textContent = css;
+    document.head.appendChild(style);
+  }
+
+  function widgetMount() {
+    let el = document.querySelector('.aipk-acct');
+    if (el) { el.innerHTML = ''; return el; }
+    el = document.createElement('div');
+    el.className = 'aipk-acct';
+    const navRight = document.querySelector('.nav__right');
+    if (navRight) navRight.appendChild(el);
+    else { el.style.cssText = 'position:fixed;top:14px;right:16px;z-index:9000'; document.body.appendChild(el); }
+    return el;
+  }
+
+  function renderAccountWidget() {
+    ensureStyles();
+    const el = widgetMount();
+    const name = String(user.username).replace(/[&<>"']/g, '');
+    el.innerHTML =
+      '<button class="aipk-acct-btn" aria-label="Your account" title="' + name + '">' +
+        '<span class="aipk-avatar">' + name.charAt(0).toUpperCase() + '</span>' +
+      '</button>' +
+      '<div class="aipk-menu aipk-hide">' +
+        '<div class="aipk-menu-name">⚡ ' + name + (user.role === 'admin' ? '<small>Master Admin</small>' : '') + '</div>' +
+        (user.role === 'admin' ? '<a href="admin.html">Admin console</a>' : '') +
+        '<button class="aipk-out">Sign out</button>' +
+      '</div>';
+    const menu = el.querySelector('.aipk-menu');
+    el.querySelector('.aipk-acct-btn').onclick = e => { e.stopPropagation(); menu.classList.toggle('aipk-hide'); };
+    document.addEventListener('click', () => menu.classList.add('aipk-hide'));
+    el.querySelector('.aipk-out').onclick = async () => {
       try { await api('/api/auth/logout', { method: 'POST' }); } catch (e) {}
-      setToken(null); user = null; chip.remove(); location.reload();
+      setToken(null); user = null; location.reload();
+    };
+  }
+
+  function renderSignInWidget() {
+    ensureStyles();
+    const el = widgetMount();
+    el.innerHTML =
+      '<button class="aipk-acct-btn" aria-label="Sign in">' +
+        '<span class="aipk-avatar aipk-avatar--out">' + PERSON_SVG + '</span>' +
+        '<span class="aipk-signin-label">Sign in</span>' +
+      '</button>';
+    el.querySelector('.aipk-acct-btn').onclick = () => {
+      if (GATED) showGate();                    // gate lives on this page
+      else window.location.href = 'playground.html';  // sign in / sign up there
     };
   }
 
   function enter(u) {
     user = u;
     hideGate();
-    showChip();
+    renderAccountWidget();
     document.dispatchEvent(new CustomEvent('aipk-login', { detail: u }));
     readyResolve(u);
   }
@@ -216,9 +272,10 @@
       const d = await api('/api/auth/me'); // also probes that the worker is reachable
       if (d.user) { enter(d.user); return; }
       if (token) setToken(null);
-      showGate();
+      renderSignInWidget();
+      if (GATED) showGate(); else readyResolve(null);
     } catch (err) {
-      if (err.status) { setToken(null); showGate(); return; } // worker reachable, token bad
+      if (err.status) { setToken(null); renderSignInWidget(); if (GATED) showGate(); else readyResolve(null); return; }
       // Worker unreachable (not deployed / offline): fail open so the
       // playground still works — nothing will sync to an account.
       console.warn('Auth worker unreachable — playground unlocked, no account sync.', err.message);
